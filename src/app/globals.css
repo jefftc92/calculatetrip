@@ -7,6 +7,16 @@
     scroll-behavior: smooth;
   }
   body {
-    @apply bg-gray-50 text-gray-900;
+    @apply bg-[#f8f7f4] text-ocean-950 font-sans antialiased;
   }
+  h1, h2, h3 {
+    @apply font-serif;
+  }
+}
+
+@layer utilities {
+  .score-exceptional { @apply text-emerald-600; }
+  .score-superb      { @apply text-green-500; }
+  .score-excellent   { @apply text-amber-500; }
+  .score-good        { @apply text-orange-400; }
 }

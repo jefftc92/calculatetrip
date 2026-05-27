@@ -2,16 +2,28 @@ import Link from 'next/link'
 
 export default function Navigation() {
   return (
-    <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
-      <div className="max-w-6xl mx-auto px-4 flex items-center justify-between h-16">
-        <Link href="/" className="font-bold text-xl text-green-700 tracking-tight">
-          CalculateTrip
+    <nav className="bg-ocean-950 text-white sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
+        <Link href="/" className="flex items-center gap-2">
+          <span className="font-serif text-xl font-bold tracking-tight">CalculateTrip</span>
+          <span className="hidden sm:inline text-ocean-400 text-xs font-sans uppercase tracking-widest mt-0.5">
+            All-Inclusive Guide
+          </span>
         </Link>
-        <div className="hidden md:flex items-center gap-6 text-sm font-medium text-gray-600">
-          <Link href="/resorts/" className="hover:text-green-700 transition-colors">All Resorts</Link>
-          <Link href="/best-adults-only-all-inclusive-resorts/" className="hover:text-green-700 transition-colors">Adults Only</Link>
-          <Link href="/best-family-all-inclusive-resorts/" className="hover:text-green-700 transition-colors">Family</Link>
-          <Link href="/best-value-all-inclusive-resorts/" className="hover:text-green-700 transition-colors">Best Value</Link>
+
+        <div className="flex items-center gap-1 text-sm font-sans">
+          <Link href="/resorts/" className="px-3 py-1.5 rounded-lg text-ocean-200 hover:text-white hover:bg-ocean-800 transition-all">
+            All Resorts
+          </Link>
+          <Link href="/best-adults-only-all-inclusive-resorts/" className="hidden md:block px-3 py-1.5 rounded-lg text-ocean-200 hover:text-white hover:bg-ocean-800 transition-all">
+            Adults Only
+          </Link>
+          <Link href="/best-family-all-inclusive-resorts/" className="hidden md:block px-3 py-1.5 rounded-lg text-ocean-200 hover:text-white hover:bg-ocean-800 transition-all">
+            Family
+          </Link>
+          <Link href="/best-value-all-inclusive-resorts/" className="hidden lg:block px-3 py-1.5 rounded-lg text-ocean-200 hover:text-white hover:bg-ocean-800 transition-all">
+            Best Value
+          </Link>
         </div>
       </div>
     </nav>
