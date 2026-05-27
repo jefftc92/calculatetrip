@@ -44,7 +44,7 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "PORT=8080 node serve.js"
+args = "npm install && npm run build && PORT=8080 npm run serve"
 waitForPort = 8080
 
 [deployment]
