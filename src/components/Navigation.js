@@ -24,6 +24,9 @@ export default function Navigation() {
           <Link href="/best-value-all-inclusive-resorts/" className="hidden lg:block px-3 py-1.5 rounded-lg text-ocean-200 hover:text-white hover:bg-ocean-800 transition-all">
             Best Value
           </Link>
+          <Link href="/compare/" className="px-3 py-1.5 rounded-lg bg-ocean-700 text-white hover:bg-ocean-600 transition-all font-semibold">
+            Compare
+          </Link>
         </div>
       </div>
     </nav>
