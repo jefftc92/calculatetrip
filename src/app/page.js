@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import ResortCard from '@/components/ResortCard'
-import { resorts } from '@/data/resorts'
+import { resorts, getAllComparisonPairs } from '@/data/resorts'
 import { SITE_NAME, SITE_URL } from '@/lib/utils'
 
 export const metadata = {
@@ -22,6 +22,7 @@ const jsonLd = {
 }
 
 const topResorts = [...resorts].sort((a, b) => b.ratings.overall - a.ratings.overall).slice(0, 3)
+const featuredPairs = getAllComparisonPairs().slice(0, 4)
 
 const categories = [
   { label: 'Adults Only',  sub: 'Romantic escapes, 16+ or 18+', href: '/best-adults-only-all-inclusive-resorts/', icon: '🌙' },
@@ -76,10 +77,10 @@ export default function HomePage() {
               Browse All Resorts
             </Link>
             <Link
-              href="/best-adults-only-all-inclusive-resorts/"
-              className="inline-block border border-ocean-700 text-ocean-200 font-sans font-medium px-8 py-3.5 rounded-xl text-sm hover:bg-ocean-900 transition-colors"
+              href="/compare/"
+              className="inline-block bg-gold-500 hover:bg-gold-600 text-white font-sans font-bold px-8 py-3.5 rounded-xl text-sm transition-colors shadow-lg"
             >
-              Adults-Only Resorts
+              Compare Resorts →
             </Link>
           </div>
 
@@ -117,6 +118,59 @@ export default function HomePage() {
         </div>
         <div className="mt-8 text-center sm:hidden">
           <Link href="/resorts/" className="font-sans text-sm font-medium text-ocean-700">View all resorts →</Link>
+        </div>
+      </section>
+
+      {/* ── Compare promo ── */}
+      <section className="bg-ocean-50 border-y border-ocean-100 py-20 px-4 sm:px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+            <div>
+              <p className="font-sans text-xs font-semibold uppercase tracking-widest text-ocean-500 mb-2">Side-by-Side</p>
+              <h2 className="font-serif text-3xl md:text-4xl font-bold text-ocean-950 mb-4">
+                Compare Any Two Resorts
+              </h2>
+              <p className="font-sans text-ocean-600 leading-relaxed mb-6">
+                See how any two resorts stack up across food, beach, pool, service, value, and eleven rating categories — plus a full amenities checklist and our editorial verdict.
+              </p>
+              <Link
+                href="/compare/"
+                className="inline-block bg-ocean-900 hover:bg-ocean-950 text-white font-sans font-bold px-6 py-3 rounded-xl text-sm transition-colors"
+              >
+                Start Comparing →
+              </Link>
+            </div>
+            <div className="space-y-2">
+              {featuredPairs.map(({ a, b }) => {
+                const slug = `${a.slug}-vs-${b.slug}`
+                return (
+                  <Link
+                    key={slug}
+                    href={`/compare/${slug}/`}
+                    className="flex items-center justify-between p-4 bg-white rounded-xl border border-ocean-100 hover:border-ocean-300 hover:shadow-card transition-all group"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className="text-ocean-400 group-hover:text-ocean-600 transition-colors shrink-0 text-sm">→</span>
+                      <span className="font-sans text-sm text-ocean-800 group-hover:text-ocean-950 transition-colors truncate">
+                        {a.name} vs {b.name}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0 ml-3">
+                      <span className="font-sans text-xs font-bold text-emerald-600">{a.ratings.overall}</span>
+                      <span className="font-sans text-xs text-ocean-300">vs</span>
+                      <span className="font-sans text-xs font-bold text-emerald-600">{b.ratings.overall}</span>
+                    </div>
+                  </Link>
+                )
+              })}
+              <Link
+                href="/compare/"
+                className="block text-center py-2 font-sans text-sm text-ocean-500 hover:text-ocean-800 transition-colors"
+              >
+                View all comparisons →
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 
