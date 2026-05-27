@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { resorts, getAllComparisonPairs } from '@/data/resorts'
 import { SITE_URL } from '@/lib/utils'
-import { scoreColor, scoreLabel } from '@/components/RatingBar'
 import ComparePicker from '@/components/ComparePicker'
 import Breadcrumb from '@/components/Breadcrumb'
 
@@ -18,83 +17,93 @@ export const metadata = {
 
 const pairs = getAllComparisonPairs()
 
+const FAQS = [
+  {
+    q: 'How do I use the compare tool?',
+    a: 'Click "Add Resort" to open the selection panel and pick your first resort. The tool will automatically prompt you to add a second. Once both slots are filled, click "Compare Resorts" to see a full side-by-side breakdown of scores, amenities, and our editorial verdict.',
+  },
+  {
+    q: 'How many resorts can I compare at once?',
+    a: 'The tool currently supports head-to-head comparisons between two resorts, covering eleven rating categories plus a full amenities checklist.',
+  },
+  {
+    q: 'Where do the scores come from?',
+    a: 'Scores are aggregated from verified guest reviews on major booking platforms, weighted for recency and review volume. Each category — food, beach, pool, atmosphere, location, rooms, value, cleanliness, service, and sleep quality — is scored independently out of 10.',
+  },
+  {
+    q: 'Are these resorts truly all-inclusive?',
+    a: 'Yes — every resort in our database is verified all-inclusive. Core inclusions (accommodation, meals, drinks, core activities) are confirmed before listing. Some premium extras like spa treatments or specialty restaurants may carry additional charges. Always verify current inclusions with the resort before booking.',
+  },
+  {
+    q: 'How current is the data?',
+    a: 'Resort scores are reviewed continuously and reflect the most current available guest review aggregates. Amenity and property details are verified at listing and updated when changes are reported.',
+  },
+]
+
 export default function CompareHubPage() {
   return (
     <>
       {/* Header */}
-      <div className="bg-gradient-to-br from-ocean-950 via-ocean-900 to-ocean-800 pt-8 pb-16 px-4 sm:px-6">
-        <div className="max-w-4xl mx-auto">
+      <div className="bg-ocean-950 pt-8 pb-16 px-4 sm:px-6">
+        <div className="max-w-5xl mx-auto">
           <Breadcrumb dark crumbs={[{ label: 'Home', href: '/' }, { label: 'Compare Resorts' }]} />
-          <p className="font-sans text-xs font-bold uppercase tracking-[0.2em] text-ocean-500 mb-2">Head-to-Head</p>
-          <h1 className="font-serif text-4xl md:text-5xl font-bold text-white mb-3">Compare Resorts</h1>
-          <p className="font-sans text-ocean-400 max-w-lg">
-            Pick any two all-inclusive resorts and see a full side-by-side breakdown — ratings, amenities, and our verdict.
+          <h1 className="font-serif text-4xl md:text-5xl font-bold text-white mt-4">Compare Resorts</h1>
+          <p className="font-sans text-ocean-400 mt-2 max-w-lg text-sm">
+            Side-by-side ratings, amenities, and our editorial verdict for any two all-inclusive resorts.
           </p>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 -mt-6 pb-16">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 -mt-6 pb-16">
 
-        {/* Picker */}
-        <div className="mb-12">
+        {/* Picker card */}
+        <div className="bg-white border border-ocean-100 rounded-2xl shadow-card p-6 mb-12">
+          <p className="font-sans text-sm text-ocean-500 mb-5">
+            Start your comparison by adding a resort →
+          </p>
           <ComparePicker resorts={resorts} />
         </div>
 
-        {/* All pairs */}
-        <p className="font-sans text-xs font-bold uppercase tracking-widest text-ocean-500 mb-4">All Comparisons</p>
-        <h2 className="font-serif text-2xl font-bold text-ocean-950 mb-6">Browse Every Match-Up</h2>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Popular comparisons — two column link list */}
+        <h2 className="font-serif text-2xl font-bold text-ocean-950 mb-5">Popular Comparisons</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 mb-14">
           {pairs.map(({ a, b }) => {
-            const winner = a.ratings.overall >= b.ratings.overall ? a : b
-            const pair = `${a.slug}-vs-${b.slug}`
-
+            const slug = `${a.slug}-vs-${b.slug}`
             return (
               <Link
-                key={pair}
-                href={`/compare/${pair}/`}
-                className="group bg-white border border-ocean-100 hover:border-ocean-300 rounded-2xl p-5 shadow-card hover:shadow-card-hover transition-all flex flex-col gap-4"
+                key={slug}
+                href={`/compare/${slug}/`}
+                className="flex items-center gap-2.5 py-3 border-b border-ocean-100 font-sans text-sm text-ocean-700 hover:text-ocean-950 group transition-colors"
               >
-                {/* Two resorts */}
-                <div className="flex items-center justify-between gap-3">
-                  {/* Resort A */}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-serif text-sm font-bold text-ocean-950 leading-snug truncate">{a.name}</p>
-                    <p className="font-sans text-xs text-ocean-400 mt-0.5">{a.country}</p>
-                  </div>
-
-                  {/* Scores */}
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className={`font-sans text-lg font-extrabold tabular-nums ${scoreColor(a.ratings.overall)}`}>
-                      {a.ratings.overall}
-                    </span>
-                    <span className="font-sans text-xs font-bold text-ocean-300">vs</span>
-                    <span className={`font-sans text-lg font-extrabold tabular-nums ${scoreColor(b.ratings.overall)}`}>
-                      {b.ratings.overall}
-                    </span>
-                  </div>
-
-                  {/* Resort B */}
-                  <div className="flex-1 min-w-0 text-right">
-                    <p className="font-serif text-sm font-bold text-ocean-950 leading-snug truncate">{b.name}</p>
-                    <p className="font-sans text-xs text-ocean-400 mt-0.5">{b.country}</p>
-                  </div>
-                </div>
-
-                {/* Winner strip */}
-                <div className="flex items-center justify-between pt-3 border-t border-ocean-50">
-                  <span className="font-sans text-xs text-ocean-400">Winner</span>
-                  <span className="font-sans text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full">
-                    {winner.name.split(' ').slice(0, 2).join(' ')} ({winner.ratings.overall})
-                  </span>
-                  <span className="font-sans text-xs font-medium text-ocean-600 group-hover:text-ocean-900 transition-colors">
-                    Compare →
-                  </span>
-                </div>
+                <span className="text-ocean-400 group-hover:text-ocean-600 transition-colors shrink-0">→</span>
+                <span>{a.name} vs {b.name}</span>
               </Link>
             )
           })}
         </div>
+
+        {/* About */}
+        <div className="mb-12 max-w-2xl">
+          <h2 className="font-serif text-2xl font-bold text-ocean-950 mb-3">About Our Compare Tool</h2>
+          <p className="font-sans text-sm text-ocean-600 leading-relaxed">
+            Our team aggregates verified guest reviews from major booking platforms to score every resort across eleven categories: food, beach, pool, atmosphere, location, rooms, value, cleanliness, service, and sleep quality. The overall score is a weighted composite designed to reflect the full experience — not just the highlights. Use the comparison tool to see a full side-by-side breakdown of scores, amenities, and our editorial verdict for any two resorts in our database. Affiliate links are disclosed and never influence ratings.
+          </p>
+        </div>
+
+        {/* FAQs */}
+        <h2 className="font-serif text-2xl font-bold text-ocean-950 mb-2">FAQs</h2>
+        <div className="divide-y divide-ocean-100">
+          {FAQS.map(({ q, a }) => (
+            <details key={q} className="group py-4">
+              <summary className="flex items-center justify-between cursor-pointer list-none [&::-webkit-details-marker]:hidden select-none">
+                <span className="font-sans text-sm font-semibold text-ocean-900 pr-4">{q}</span>
+                <span className="text-ocean-400 text-sm shrink-0 group-open:rotate-180 transition-transform inline-block">▾</span>
+              </summary>
+              <p className="font-sans text-sm text-ocean-600 leading-relaxed mt-2 max-w-2xl">{a}</p>
+            </details>
+          ))}
+        </div>
+
       </div>
     </>
   )

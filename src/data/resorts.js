@@ -168,7 +168,11 @@ export function getAllComparisonPairs() {
   const pairs = []
   for (let i = 0; i < resorts.length; i++) {
     for (let j = i + 1; j < resorts.length; j++) {
-      pairs.push({ a: resorts[i], b: resorts[j] })
+      const x = resorts[i]
+      const y = resorts[j]
+      // Always put the alphabetically-first slug as 'a' so URLs are consistent everywhere
+      const [a, b] = x.slug < y.slug ? [x, y] : [y, x]
+      pairs.push({ a, b })
     }
   }
   return pairs
