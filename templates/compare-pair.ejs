@@ -29,37 +29,38 @@ const allAmenities = Array.from(new Set([...a.amenities, ...b.amenities]))
 </script>
 
 <div class="bg-gradient-to-br from-ocean-950 via-ocean-900 to-ocean-800 px-4 sm:px-6 pt-8 pb-20">
-  <div class="max-w-4xl mx-auto">
+  <div class="max-w-6xl mx-auto">
     <a href="/compare/" class="inline-flex items-center gap-1.5 font-sans text-xs text-ocean-400 hover:text-ocean-200 transition-colors mb-8">← All Comparisons</a>
     <p class="font-sans text-xs font-bold uppercase tracking-[0.2em] text-ocean-500 mb-2 text-center">Resort Comparison · 2025</p>
-    <h1 class="font-serif text-3xl md:text-4xl font-bold text-white text-center mb-10 leading-tight">
+    <h1 id="comparison-title" class="font-serif text-3xl md:text-4xl font-bold text-white text-center mb-10 leading-tight">
       <%= a.name %>
       <span class="block font-sans font-normal text-ocean-500 text-xl my-2">vs</span>
       <%= b.name %>
     </h1>
 
-    <div class="grid grid-cols-2 gap-3">
-      <% [a, b].forEach(r => { %>
-        <% const isWinner = r.slug === winner.slug %>
-        <div class="rounded-2xl p-4 sm:p-5 text-center border <%= isWinner ? 'bg-white/10 border-gold-500/60' : 'bg-white/5 border-white/10' %>">
-          <% if (isWinner) { %>
-            <span class="inline-block font-sans text-[10px] font-extrabold uppercase tracking-widest bg-gold-500 text-white px-2.5 py-0.5 rounded-full mb-3">Recommended</span>
-          <% } %>
+    <div id="hero-strip" class="grid grid-cols-2 sm:grid-cols-3 gap-3" data-base-cols="2">
+      <% [a, b].forEach((r, idx) => { %>
+        <div class="rounded-2xl p-4 sm:p-5 text-center border bg-white/5 border-white/10 relative" data-slot-card="<%= idx %>" data-slug="<%= r.slug %>">
           <a href="/resorts/<%= r.slug %>/" class="font-serif text-base sm:text-lg font-bold text-white hover:text-gold-300 transition-colors block leading-snug mb-1"><%= r.name %></a>
           <p class="font-sans text-xs text-ocean-400 mb-3"><%= r.country %> · <%= r.type === 'adults-only' ? 'Adults Only' : 'Family' %></p>
           <div class="font-serif text-4xl font-bold tabular-nums <%= scoreColor(r.ratings.overall) %>"><%= r.ratings.overall %></div>
           <div class="font-sans text-xs text-ocean-400 mt-0.5"><%= scoreLabel(r.ratings.overall) %></div>
-          <a href="<%= r.affiliateLink %>" target="_blank" rel="noopener noreferrer sponsored" class="mt-4 block font-sans text-sm font-semibold rounded-xl py-2.5 transition-colors <%= isWinner ? 'bg-gold-500 hover:bg-gold-600 text-white' : 'bg-white/10 hover:bg-white/20 text-white' %>">Check Prices →</a>
+          <a href="<%= r.agodaLink %>" target="_blank" rel="noopener noreferrer sponsored" class="mt-4 block font-sans text-sm font-semibold rounded-xl py-2.5 transition-colors bg-gold-500 hover:bg-gold-600 text-white">Book on Agoda →</a>
         </div>
       <% }) %>
+      <!-- Empty "Add Resort" slot -->
+      <button type="button" id="add-resort-slot" class="rounded-2xl p-4 sm:p-5 border-2 border-dashed border-white/20 hover:border-gold-500/60 hover:bg-white/5 transition-colors flex flex-col items-center justify-center gap-2 min-h-[180px] text-ocean-300 hover:text-gold-300 col-span-2 sm:col-span-1">
+        <span class="text-3xl">+</span>
+        <span class="font-sans text-xs font-bold uppercase tracking-widest">Add Resort</span>
+      </button>
     </div>
   </div>
 </div>
 
-<div class="max-w-4xl mx-auto px-4 sm:px-6 -mt-8 pb-16">
+<div class="max-w-6xl mx-auto px-4 sm:px-6 -mt-8 pb-16">
 
-  <!-- Key differences -->
-  <div class="bg-white border border-ocean-100 rounded-2xl shadow-card p-5 sm:p-7 mb-6">
+  <!-- Key differences (hidden when 3+ resorts) -->
+  <div id="editorial-summary" class="bg-white border border-ocean-100 rounded-2xl shadow-card p-5 sm:p-7 mb-6">
     <p class="font-sans text-xs font-bold uppercase tracking-widest text-ocean-500 mb-1">Editorial Summary</p>
     <h2 class="font-serif text-xl font-bold text-ocean-950 mb-3">Key Differences</h2>
     <p class="font-sans text-sm text-ocean-700 leading-relaxed">
@@ -71,14 +72,15 @@ const allAmenities = Array.from(new Set([...a.amenities, ...b.amenities]))
   </div>
 
   <!-- Ratings table -->
-  <div class="bg-white rounded-2xl shadow-card overflow-hidden mb-6 border border-ocean-100">
-    <div class="grid grid-cols-[1fr_80px_80px] sm:grid-cols-[1fr_100px_100px] bg-ocean-950 text-white text-xs font-sans font-bold uppercase tracking-wider">
+  <div id="ratings-table" class="bg-white rounded-2xl shadow-card overflow-hidden mb-6 border border-ocean-100" data-base-cols="2">
+    <div class="ratings-header grid grid-cols-[1fr_80px_80px] sm:grid-cols-[1fr_100px_100px] bg-ocean-950 text-white text-xs font-sans font-bold uppercase tracking-wider">
       <div class="px-4 sm:px-5 py-3.5">Category</div>
       <div class="py-3.5 text-center truncate px-1 text-ocean-300"><%= a.name.split(' ')[0] %></div>
       <div class="py-3.5 text-center truncate px-1 text-ocean-300"><%= b.name.split(' ')[0] %></div>
     </div>
+
     <!-- Agoda booking row -->
-    <div class="grid grid-cols-[1fr_80px_80px] sm:grid-cols-[1fr_100px_100px] border-b border-ocean-50 bg-white">
+    <div class="ratings-row grid grid-cols-[1fr_80px_80px] sm:grid-cols-[1fr_100px_100px] border-b border-ocean-50 bg-white">
       <div class="px-4 sm:px-5 py-3.5 font-sans text-sm text-ocean-700 font-semibold">Book Online</div>
       <div class="py-3 flex items-center justify-center">
         <a href="<%= a.agodaLink %>" target="_blank" rel="noopener noreferrer sponsored" class="inline-block font-sans text-[11px] font-bold uppercase tracking-wide bg-ocean-900 hover:bg-ocean-950 text-white px-3 py-1.5 rounded transition-colors">Agoda</a>
@@ -87,12 +89,13 @@ const allAmenities = Array.from(new Set([...a.amenities, ...b.amenities]))
         <a href="<%= b.agodaLink %>" target="_blank" rel="noopener noreferrer sponsored" class="inline-block font-sans text-[11px] font-bold uppercase tracking-wide bg-ocean-900 hover:bg-ocean-950 text-white px-3 py-1.5 rounded transition-colors">Agoda</a>
       </div>
     </div>
+
     <% ratingRows.forEach((row, i) => {
       const sA = a.ratings[row.key]
       const sB = b.ratings[row.key]
       if (sA === null && sB === null) return
     %>
-      <div class="grid grid-cols-[1fr_80px_80px] sm:grid-cols-[1fr_100px_100px] border-b border-ocean-50 last:border-0 <%= i % 2 === 0 ? 'bg-white' : 'bg-ocean-50/40' %>">
+      <div class="ratings-row grid grid-cols-[1fr_80px_80px] sm:grid-cols-[1fr_100px_100px] border-b border-ocean-50 last:border-0 <%= i % 2 === 0 ? 'bg-white' : 'bg-ocean-50/40' %>">
         <div class="px-4 sm:px-5 py-3.5 font-sans text-sm text-ocean-700 font-medium flex items-center gap-2">
           <%= row.label %>
           <% if (row.key === 'overall') { %>
@@ -118,14 +121,14 @@ const allAmenities = Array.from(new Set([...a.amenities, ...b.amenities]))
   </div>
 
   <!-- Amenities -->
-  <div class="bg-white rounded-2xl shadow-card overflow-hidden mb-6 border border-ocean-100">
-    <div class="grid grid-cols-[1fr_80px_80px] sm:grid-cols-[1fr_100px_100px] bg-ocean-950 text-white text-xs font-sans font-bold uppercase tracking-wider">
+  <div id="amenities-table" class="bg-white rounded-2xl shadow-card overflow-hidden mb-6 border border-ocean-100" data-base-cols="2">
+    <div class="amenities-header grid grid-cols-[1fr_80px_80px] sm:grid-cols-[1fr_100px_100px] bg-ocean-950 text-white text-xs font-sans font-bold uppercase tracking-wider">
       <div class="px-4 sm:px-5 py-3.5">Amenity</div>
       <div class="py-3.5 text-center truncate px-1 text-ocean-300"><%= a.name.split(' ')[0] %></div>
       <div class="py-3.5 text-center truncate px-1 text-ocean-300"><%= b.name.split(' ')[0] %></div>
     </div>
     <% allAmenities.forEach((am, i) => { %>
-      <div class="grid grid-cols-[1fr_80px_80px] sm:grid-cols-[1fr_100px_100px] border-b border-ocean-50 last:border-0 <%= i % 2 === 0 ? 'bg-ocean-50/40' : 'bg-white' %>">
+      <div class="amenities-row grid grid-cols-[1fr_80px_80px] sm:grid-cols-[1fr_100px_100px] border-b border-ocean-50 last:border-0 <%= i % 2 === 0 ? 'bg-ocean-50/40' : 'bg-white' %>">
         <div class="px-4 sm:px-5 py-3 font-sans text-sm text-ocean-700"><%= am %></div>
         <div class="py-3 flex items-center justify-center">
           <%- a.amenities.includes(am) ? '<span class="text-emerald-500 text-lg">✓</span>' : '<span class="text-gray-300">—</span>' %>
@@ -137,8 +140,8 @@ const allAmenities = Array.from(new Set([...a.amenities, ...b.amenities]))
     <% }) %>
   </div>
 
-  <!-- Verdict -->
-  <div class="bg-ocean-950 rounded-2xl p-6 sm:p-8 mb-6">
+  <!-- Verdict (hidden when 3+ resorts) -->
+  <div id="verdict-section" class="bg-ocean-950 rounded-2xl p-6 sm:p-8 mb-6">
     <p class="font-sans text-xs font-bold uppercase tracking-widest text-ocean-500 mb-1">Our Verdict</p>
     <h2 class="font-serif text-2xl font-bold text-white mb-3"><%= winner.name %> comes out ahead</h2>
     <p class="font-sans text-ocean-300 leading-relaxed text-sm">
@@ -152,8 +155,8 @@ const allAmenities = Array.from(new Set([...a.amenities, ...b.amenities]))
       <% } %>
     </p>
     <div class="mt-5 flex flex-col sm:flex-row gap-3">
-      <a href="<%= winner.affiliateLink %>" target="_blank" rel="noopener noreferrer sponsored" class="flex-1 text-center font-sans text-sm font-bold bg-gold-500 hover:bg-gold-600 text-white rounded-xl py-3 transition-colors">View <%= winner.name.split(' ').slice(0, 2).join(' ') %> Prices →</a>
-      <a href="<%= loser.affiliateLink %>" target="_blank" rel="noopener noreferrer sponsored" class="flex-1 text-center font-sans text-sm font-semibold bg-white/10 hover:bg-white/20 text-white rounded-xl py-3 transition-colors">View <%= loser.name.split(' ').slice(0, 2).join(' ') %> Prices →</a>
+      <a href="<%= winner.agodaLink %>" target="_blank" rel="noopener noreferrer sponsored" class="flex-1 text-center font-sans text-sm font-bold bg-gold-500 hover:bg-gold-600 text-white rounded-xl py-3 transition-colors">Book <%= winner.name.split(' ').slice(0, 2).join(' ') %> on Agoda →</a>
+      <a href="<%= loser.agodaLink %>" target="_blank" rel="noopener noreferrer sponsored" class="flex-1 text-center font-sans text-sm font-semibold bg-white/10 hover:bg-white/20 text-white rounded-xl py-3 transition-colors">Book <%= loser.name.split(' ').slice(0, 2).join(' ') %> on Agoda →</a>
     </div>
   </div>
 
@@ -169,3 +172,46 @@ const allAmenities = Array.from(new Set([...a.amenities, ...b.amenities]))
   </div>
 
 </div>
+
+<!-- Add Resort modal (hidden by default) -->
+<div id="add-resort-modal" class="hidden fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-ocean-100">
+      <h3 class="font-serif text-lg font-bold text-ocean-950">Add a Resort to Compare</h3>
+      <button type="button" id="add-resort-close" class="text-ocean-400 hover:text-ocean-900 text-xl leading-none">×</button>
+    </div>
+    <form id="add-resort-form" class="p-5 space-y-3">
+      <div>
+        <label for="add-country" class="block font-sans text-xs text-ocean-400 mb-1">Country</label>
+        <select id="add-country" class="w-full font-sans text-sm bg-white border border-ocean-200 text-ocean-900 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ocean-500">
+          <option value="">Select country</option>
+        </select>
+      </div>
+      <div id="add-area-row" class="hidden">
+        <label for="add-area" class="block font-sans text-xs text-ocean-400 mb-1">Area</label>
+        <select id="add-area" disabled class="w-full font-sans text-sm bg-white border border-ocean-200 text-ocean-900 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ocean-500 disabled:opacity-40">
+          <option value="">Select area</option>
+        </select>
+      </div>
+      <div>
+        <label for="add-resort" class="block font-sans text-xs text-ocean-400 mb-1">Resort</label>
+        <select id="add-resort" disabled class="w-full font-sans text-sm bg-white border border-ocean-200 text-ocean-900 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ocean-500 disabled:opacity-40">
+          <option value="">Select resort</option>
+        </select>
+      </div>
+      <button type="submit" id="add-resort-submit" disabled class="w-full font-sans text-sm font-bold bg-ocean-900 hover:bg-ocean-950 disabled:bg-ocean-300 text-white rounded-xl py-3 transition-colors">Add to Comparison</button>
+    </form>
+  </div>
+</div>
+
+<script id="pair-data" type="application/json">
+<%- JSON.stringify({
+  base: [a.slug, b.slug],
+  resorts: resorts.map(r => ({
+    slug: r.slug, name: r.name, country: r.country, area: r.area, type: r.type,
+    ratings: r.ratings, amenities: r.amenities, agodaLink: r.agodaLink,
+  })),
+  ratingRows,
+}) %>
+</script>
+<script src="/compare-pair.js" defer></script>
