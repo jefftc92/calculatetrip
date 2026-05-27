@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title><%= title %></title>
+  <meta name="description" content="<%= description %>" />
+  <link rel="canonical" href="<%= canonical %>" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="<%= title %>" />
+  <meta property="og:description" content="<%= description %>" />
+  <meta property="og:url" content="<%= canonical %>" />
+  <meta property="og:site_name" content="<%= SITE_NAME %>" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="<%= title %>" />
+  <meta name="twitter:description" content="<%= description %>" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css" />
+  <% if (typeof jsonLd !== 'undefined') { %>
+    <script type="application/ld+json"><%- JSON.stringify(jsonLd) %></script>
+  <% } %>
+</head>
+<body class="bg-[#f8f7f4] text-ocean-900 min-h-screen flex flex-col">
+  <%- include('_navigation', { activeNav: typeof activeNav !== 'undefined' ? activeNav : '' }) %>
+  <main class="flex-1"><%- body %></main>
+  <%- include('_footer') %>
+</body>
+</html>

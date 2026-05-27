@@ -1,0 +1,48 @@
+<article class="bg-white rounded-2xl shadow-card hover:shadow-card-hover transition-shadow duration-300 overflow-hidden flex flex-col">
+  <% const tone = resort.ratings.overall >= 9.5 ? 'from-emerald-400 to-teal-500' : resort.ratings.overall >= 9.0 ? 'from-green-400 to-emerald-500' : 'from-amber-400 to-orange-400' %>
+  <div class="h-1.5 w-full bg-gradient-to-r <%= tone %>"></div>
+  <div class="p-6 flex flex-col flex-1 gap-4">
+    <div class="flex items-start justify-between gap-3">
+      <div class="flex items-start gap-3 min-w-0">
+        <% if (typeof rank !== 'undefined' && rank) { %>
+          <span class="shrink-0 mt-0.5 w-6 h-6 rounded-full bg-ocean-950 text-white text-xs font-bold font-sans flex items-center justify-center"><%= rank %></span>
+        <% } %>
+        <div class="min-w-0">
+          <a href="/resorts/<%= resort.slug %>/" class="font-serif text-lg font-bold text-ocean-950 hover:text-ocean-700 transition-colors leading-snug block"><%= resort.name %></a>
+          <div class="flex items-center gap-2 mt-1 flex-wrap">
+            <span class="text-xs font-sans text-ocean-500"><%= resort.country %></span>
+            <span class="text-ocean-200 text-xs">·</span>
+            <span class="text-xs font-sans font-medium px-2 py-0.5 rounded-full <%= resort.type === 'adults-only' ? 'bg-ocean-50 text-ocean-700' : 'bg-amber-50 text-amber-700' %>">
+              <%= resort.type === 'adults-only' ? 'Adults Only' : 'Family' %>
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="shrink-0 text-right">
+        <div class="text-3xl font-bold font-sans tabular-nums leading-none <%= scoreColor(resort.ratings.overall) %>"><%= resort.ratings.overall %></div>
+        <div class="text-xs font-sans text-ocean-400 mt-0.5"><%= scoreLabel(resort.ratings.overall) %></div>
+      </div>
+    </div>
+    <p class="text-sm font-sans text-ocean-600 leading-relaxed"><%= resort.heroTagline %></p>
+    <div class="grid grid-cols-3 gap-2">
+      <% ['food', 'service', 'value'].forEach(k => { %>
+        <div class="bg-ocean-50 rounded-xl p-2.5 text-center">
+          <div class="text-base font-bold font-sans tabular-nums <%= scoreColor(resort.ratings[k]) %>"><%= resort.ratings[k] ?? '—' %></div>
+          <div class="text-xs font-sans text-ocean-500 mt-0.5"><%= k.charAt(0).toUpperCase() + k.slice(1) %></div>
+        </div>
+      <% }) %>
+    </div>
+    <div class="flex flex-wrap gap-1.5">
+      <% resort.amenities.slice(0, 4).forEach(a => { %>
+        <span class="text-xs font-sans bg-white border border-ocean-100 text-ocean-600 rounded-full px-2.5 py-0.5"><%= a %></span>
+      <% }) %>
+      <% if (resort.amenities.length > 4) { %>
+        <span class="text-xs font-sans text-ocean-400 self-center">+<%= resort.amenities.length - 4 %></span>
+      <% } %>
+    </div>
+    <div class="flex gap-2 mt-auto pt-1">
+      <a href="/resorts/<%= resort.slug %>/" class="flex-1 text-center text-sm font-sans font-medium border border-ocean-200 text-ocean-700 rounded-xl py-2.5 hover:bg-ocean-50 hover:border-ocean-300 transition-all">Full Review</a>
+      <a href="<%= resort.affiliateLink %>" target="_blank" rel="noopener noreferrer sponsored" class="flex-1 text-center text-sm font-sans font-medium bg-ocean-900 text-white rounded-xl py-2.5 hover:bg-ocean-950 transition-all">Check Prices →</a>
+    </div>
+  </div>
+</article>

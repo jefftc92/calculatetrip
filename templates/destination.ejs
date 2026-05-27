@@ -1,0 +1,19 @@
+<div class="bg-ocean-950 pt-10 pb-16 px-4 sm:px-6">
+  <div class="max-w-7xl mx-auto">
+    <nav class="flex items-center gap-2 text-xs text-ocean-400 mb-4">
+      <a href="/" class="hover:text-ocean-200">Home</a>
+      <span>·</span>
+      <span class="text-ocean-300"><%= country.name %></span>
+    </nav>
+    <p class="font-sans text-xs font-bold uppercase tracking-widest text-ocean-500 mb-2">Destination Guide · 2025</p>
+    <h1 class="font-serif text-4xl md:text-5xl font-bold text-white">All-Inclusive Resorts in <%= country.name %></h1>
+    <p class="font-sans text-ocean-400 mt-3 max-w-xl"><%= resortList.length %> independently-rated <%= resortList.length === 1 ? 'resort' : 'resorts' %> in <%= country.name %>, sorted by overall score.</p>
+  </div>
+</div>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 -mt-6 pb-16">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <% resortList.forEach((resort, i) => { %>
+      <%- include('_resort-card', { resort, rank: i + 1 }) %>
+    <% }) %>
+  </div>
+</div>
