@@ -77,36 +77,38 @@ const allAmenities = Array.from(new Set([...a.amenities, ...b.amenities]))
       <div class="py-3.5 text-center truncate px-1 text-ocean-300"><%= a.name.split(' ')[0] %></div>
       <div class="py-3.5 text-center truncate px-1 text-ocean-300"><%= b.name.split(' ')[0] %></div>
     </div>
+    <!-- Agoda booking row -->
+    <div class="grid grid-cols-[1fr_80px_80px] sm:grid-cols-[1fr_100px_100px] border-b border-ocean-50 bg-white">
+      <div class="px-4 sm:px-5 py-3.5 font-sans text-sm text-ocean-700 font-semibold">Book Online</div>
+      <div class="py-3 flex items-center justify-center">
+        <a href="<%= a.agodaLink %>" target="_blank" rel="noopener noreferrer sponsored" class="inline-block font-sans text-[11px] font-bold uppercase tracking-wide bg-ocean-900 hover:bg-ocean-950 text-white px-3 py-1.5 rounded transition-colors">Agoda</a>
+      </div>
+      <div class="py-3 flex items-center justify-center">
+        <a href="<%= b.agodaLink %>" target="_blank" rel="noopener noreferrer sponsored" class="inline-block font-sans text-[11px] font-bold uppercase tracking-wide bg-ocean-900 hover:bg-ocean-950 text-white px-3 py-1.5 rounded transition-colors">Agoda</a>
+      </div>
+    </div>
     <% ratingRows.forEach((row, i) => {
       const sA = a.ratings[row.key]
       const sB = b.ratings[row.key]
       if (sA === null && sB === null) return
-      const aRowWins = sA !== null && sB !== null && sA > sB
-      const bRowWins = sA !== null && sB !== null && sB > sA
     %>
-      <div class="grid grid-cols-[1fr_80px_80px] sm:grid-cols-[1fr_100px_100px] border-b border-ocean-50 last:border-0 <%= i % 2 === 0 ? 'bg-ocean-50/40' : 'bg-white' %>">
+      <div class="grid grid-cols-[1fr_80px_80px] sm:grid-cols-[1fr_100px_100px] border-b border-ocean-50 last:border-0 <%= i % 2 === 0 ? 'bg-white' : 'bg-ocean-50/40' %>">
         <div class="px-4 sm:px-5 py-3.5 font-sans text-sm text-ocean-700 font-medium flex items-center gap-2">
           <%= row.label %>
           <% if (row.key === 'overall') { %>
             <span class="text-[10px] font-bold uppercase tracking-wider text-ocean-400 bg-ocean-100 px-1.5 py-0.5 rounded">Overall</span>
           <% } %>
         </div>
-        <div class="py-3.5 flex items-center justify-center <%= aRowWins ? 'bg-emerald-50' : '' %>">
+        <div class="py-3.5 flex items-center justify-center">
           <% if (sA !== null) { %>
-            <div class="text-center">
-              <span class="font-sans text-base font-bold tabular-nums <%= scoreColor(sA) %> <%= aRowWins ? 'text-lg' : '' %>"><%= sA %></span>
-              <% if (aRowWins) { %><div class="text-[10px] text-emerald-500 font-bold mt-0.5">▲ wins</div><% } %>
-            </div>
+            <span class="font-sans text-base font-bold tabular-nums <%= scoreColor(sA) %>"><%= sA %></span>
           <% } else { %>
             <span class="text-gray-300">—</span>
           <% } %>
         </div>
-        <div class="py-3.5 flex items-center justify-center <%= bRowWins ? 'bg-emerald-50' : '' %>">
+        <div class="py-3.5 flex items-center justify-center">
           <% if (sB !== null) { %>
-            <div class="text-center">
-              <span class="font-sans text-base font-bold tabular-nums <%= scoreColor(sB) %> <%= bRowWins ? 'text-lg' : '' %>"><%= sB %></span>
-              <% if (bRowWins) { %><div class="text-[10px] text-emerald-500 font-bold mt-0.5">▲ wins</div><% } %>
-            </div>
+            <span class="font-sans text-base font-bold tabular-nums <%= scoreColor(sB) %>"><%= sB %></span>
           <% } else { %>
             <span class="text-gray-300">—</span>
           <% } %>
