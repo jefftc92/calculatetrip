@@ -1,0 +1,211 @@
+// Static site generator. No framework. No client renderer. Pure Node.
+//
+// Reads templates/ + data/, writes pre-rendered HTML to dist/.
+// Tailwind compiles a single CSS file. A 1.5KB vanilla JS module
+// runs only the compare picker. Everything Google sees is HTML.
+
+const fs = require('fs')
+const path = require('path')
+const { execSync } = require('child_process')
+const ejs = require('ejs')
+
+const SITE_URL = 'https://www.calculatetrip.com'
+const SITE_NAME = 'CalculateTrip'
+
+const { resorts, bySlug, byCountry, byType, topBy, countries, allComparisonPairs } = require('./data/resorts')
+
+const ROOT = __dirname
+const DIST = path.join(ROOT, 'dist')
+const TEMPLATES = path.join(ROOT, 'templates')
+const PUBLIC = path.join(ROOT, 'public')
+
+function rmrf(dir) { if (fs.existsSync(dir)) fs.rmSync(dir, { recursive: true, force: true }) }
+function mkdirp(dir) { fs.mkdirSync(dir, { recursive: true }) }
+
+function copyDir(src, dest) {
+  mkdirp(dest)
+  for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+    const s = path.join(src, entry.name)
+    const d = path.join(dest, entry.name)
+    entry.isDirectory() ? copyDir(s, d) : fs.copyFileSync(s, d)
+  }
+}
+
+const RATING_LABELS = {
+  overall: 'Overall', food: 'Food & Dining', beach: 'Beach', pool: 'Pool',
+  atmosphere: 'Atmosphere', location: 'Location', room: 'Rooms',
+  value: 'Value for Money', cleanliness: 'Cleanliness', service: 'Service',
+  sleepQuality: 'Sleep Quality',
+}
+
+function scoreColor(s) {
+  if (s === null || s === undefined) return 'text-gray-400'
+  if (s >= 9.5) return 'text-emerald-600'
+  if (s >= 9.0) return 'text-emerald-500'
+  if (s >= 8.0) return 'text-amber-500'
+  if (s >= 7.0) return 'text-orange-500'
+  return 'text-red-500'
+}
+
+function scoreLabel(s) {
+  if (s === null || s === undefined) return 'N/A'
+  if (s >= 9.5) return 'Exceptional'
+  if (s >= 9.0) return 'Superb'
+  if (s >= 8.0) return 'Excellent'
+  if (s >= 7.0) return 'Good'
+  return 'Fair'
+}
+
+// Build a pair URL with the alphabetically-first slug as 'a'
+function pairUrl(slug1, slug2) {
+  const [a, b] = [slug1, slug2].sort()
+  return `/compare/${a}-vs-${b}/`
+}
+
+// Locals available to every template
+const baseLocals = {
+  SITE_URL, SITE_NAME,
+  resorts, bySlug, byCountry, byType, topBy, countries: countries(), allComparisonPairs: allComparisonPairs(),
+  RATING_LABELS, scoreColor, scoreLabel, pairUrl,
+}
+
+function render(templateName, locals = {}) {
+  const file = path.join(TEMPLATES, `${templateName}.ejs`)
+  return ejs.renderFile(file, { ...baseLocals, ...locals }, { async: false })
+}
+
+async function writeHtml(routePath, html) {
+  // routePath like '/', '/resorts/', '/resorts/foo/' → dist/.../index.html
+  const dir = path.join(DIST, routePath.replace(/^\/|\/$/g, ''))
+  mkdirp(dir)
+  fs.writeFileSync(path.join(dir, 'index.html'), html, 'utf8')
+}
+
+async function buildPage(routePath, templateName, locals = {}, meta = {}) {
+  const inner = await render(templateName, { ...locals, canonical: SITE_URL + routePath })
+  const html = await render('_layout', {
+    ...locals,
+    canonical: SITE_URL + routePath,
+    title: meta.title || `${SITE_NAME} | Best All-Inclusive Resorts`,
+    description: meta.description || 'Independent ratings and reviews for the best all-inclusive resorts.',
+    body: inner,
+    activeNav: meta.activeNav || '',
+  })
+  await writeHtml(routePath, html)
+}
+
+async function build() {
+  console.log('🧹 Cleaning dist/')
+  rmrf(DIST)
+  mkdirp(DIST)
+
+  console.log('📦 Copying public/ assets')
+  if (fs.existsSync(PUBLIC)) copyDir(PUBLIC, DIST)
+
+  console.log('🎨 Compiling Tailwind CSS')
+  execSync(
+    `npx tailwindcss -c tailwind.config.js -i ./styles.css -o ./dist/styles.css --minify`,
+    { stdio: 'inherit', cwd: ROOT }
+  )
+
+  console.log('📄 Rendering pages')
+
+  // Home
+  await buildPage('/', 'home', {
+    topResorts: topBy('overall', 3),
+    featuredPairs: allComparisonPairs().slice(0, 4),
+  }, {
+    title: `Best All-Inclusive Resorts 2025 | Independent Ratings | ${SITE_NAME}`,
+    description: 'Independent ratings for the best all-inclusive resorts across the Caribbean and Latin America. Compare by food, beach, pool, value, and service.',
+    activeNav: '/',
+  })
+
+  // All resorts
+  await buildPage('/resorts/', 'all-resorts', {
+    sortedResorts: topBy('overall', resorts.length),
+  }, {
+    title: `All-Inclusive Resort Reviews & Ratings 2025 | ${SITE_NAME}`,
+    description: 'Every all-inclusive resort in our database, independently rated across eleven categories.',
+    activeNav: '/resorts/',
+  })
+
+  // Single resort pages
+  for (const r of resorts) {
+    const related = resorts.filter(o => o.slug !== r.slug && (o.country === r.country || o.type === r.type)).slice(0, 2)
+    await buildPage(`/resorts/${r.slug}/`, 'resort', { resort: r, related }, {
+      title: `${r.name} Review 2025 | All-Inclusive Rating | ${SITE_NAME}`,
+      description: `Independent review of ${r.name} in ${r.country}. Rated ${r.ratings.overall}/10 overall. Scores for food, beach, pool, rooms, value, and service.`,
+    })
+  }
+
+  // Category pages
+  const categoryDefs = [
+    { slug: 'best-adults-only-all-inclusive-resorts', label: 'Adults-Only', filter: r => r.type === 'adults-only', title: 'Best Adults-Only All-Inclusive Resorts 2025', sub: 'Romantic escapes for couples and adult travelers.' },
+    { slug: 'best-family-all-inclusive-resorts', label: 'Family', filter: r => r.type === 'family', title: 'Best Family All-Inclusive Resorts 2025', sub: 'Family-friendly resorts with activities for every age.' },
+    { slug: 'best-value-all-inclusive-resorts', label: 'Best Value', filter: () => true, sortKey: 'value', title: 'Best Value All-Inclusive Resorts 2025', sub: 'Top all-inclusives ranked by value-for-money score.' },
+    { slug: 'best-beach-all-inclusive-resorts', label: 'Best Beach', filter: r => r.ratings.beach !== null, sortKey: 'beach', title: 'Best Beach All-Inclusive Resorts 2025', sub: 'All-inclusive resorts with the highest-rated beaches.' },
+  ]
+  for (const cat of categoryDefs) {
+    const list = resorts
+      .filter(cat.filter)
+      .sort((a, b) => (b.ratings[cat.sortKey || 'overall'] || 0) - (a.ratings[cat.sortKey || 'overall'] || 0))
+    await buildPage(`/${cat.slug}/`, 'category', { category: cat, resortList: list }, {
+      title: `${cat.title} | ${SITE_NAME}`,
+      description: `${cat.sub} Ranked by independent guest ratings.`,
+      activeNav: `/${cat.slug}/`,
+    })
+  }
+
+  // Destination pages
+  for (const c of countries()) {
+    const list = byCountry(c.slug).sort((a, b) => b.ratings.overall - a.ratings.overall)
+    await buildPage(`/destination/${c.slug}/`, 'destination', { country: c, resortList: list }, {
+      title: `Best All-Inclusive Resorts in ${c.name} 2025 | ${SITE_NAME}`,
+      description: `All-inclusive resorts in ${c.name}, independently rated and reviewed.`,
+    })
+  }
+
+  // Compare hub
+  await buildPage('/compare/', 'compare-hub', {
+    pairs: allComparisonPairs(),
+  }, {
+    title: `Compare All-Inclusive Resorts 2025 | Side-by-Side | ${SITE_NAME}`,
+    description: 'Compare any two all-inclusive resorts side by side. Ratings for food, beach, pool, value, service, and amenities.',
+    activeNav: '/compare/',
+  })
+
+  // Comparison pair pages
+  for (const { a, b } of allComparisonPairs()) {
+    const pairSlug = `${a.slug}-vs-${b.slug}`
+    await buildPage(`/compare/${pairSlug}/`, 'compare-pair', { a, b }, {
+      title: `${a.name} vs ${b.name} 2025 | Resort Comparison | ${SITE_NAME}`,
+      description: `Detailed comparison of ${a.name} (${a.ratings.overall}/10) and ${b.name} (${b.ratings.overall}/10). Side-by-side ratings, amenities, and editorial verdict.`,
+    })
+  }
+
+  // Sitemap
+  const urls = [
+    '/', '/resorts/', '/compare/',
+    ...categoryDefs.map(c => `/${c.slug}/`),
+    ...countries().map(c => `/destination/${c.slug}/`),
+    ...resorts.map(r => `/resorts/${r.slug}/`),
+    ...allComparisonPairs().map(({ a, b }) => `/compare/${a.slug}-vs-${b.slug}/`),
+  ]
+  const today = new Date().toISOString().split('T')[0]
+  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls.map(u => `  <url><loc>${SITE_URL}${u}</loc><lastmod>${today}</lastmod></url>`).join('\n')}
+</urlset>`
+  fs.writeFileSync(path.join(DIST, 'sitemap.xml'), sitemap, 'utf8')
+
+  // Robots
+  fs.writeFileSync(
+    path.join(DIST, 'robots.txt'),
+    `User-agent: *\nAllow: /\nSitemap: ${SITE_URL}/sitemap.xml\n`,
+    'utf8'
+  )
+
+  console.log(`✅ Built ${urls.length} pages to dist/`)
+}
+
+build().catch(err => { console.error(err); process.exit(1) })

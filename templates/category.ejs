@@ -1,0 +1,22 @@
+<div class="bg-ocean-950 pt-10 pb-16 px-4 sm:px-6">
+  <div class="max-w-7xl mx-auto">
+    <nav class="flex items-center gap-2 text-xs text-ocean-400 mb-4">
+      <a href="/" class="hover:text-ocean-200">Home</a>
+      <span>·</span>
+      <span class="text-ocean-300"><%= category.label %></span>
+    </nav>
+    <p class="font-sans text-xs font-bold uppercase tracking-widest text-ocean-500 mb-2">Curated List · 2025</p>
+    <h1 class="font-serif text-4xl md:text-5xl font-bold text-white"><%= category.title %></h1>
+    <p class="font-sans text-ocean-400 mt-3 max-w-xl"><%= category.sub %></p>
+  </div>
+</div>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 -mt-6 pb-16">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <% resortList.forEach((resort, i) => { %>
+      <%- include('_resort-card', { resort, rank: i + 1 }) %>
+    <% }) %>
+  </div>
+  <% if (resortList.length === 0) { %>
+    <p class="text-center font-sans text-ocean-500 py-12">No resorts match this category yet.</p>
+  <% } %>
+</div>

@@ -1,0 +1,111 @@
+<% const r = resort %>
+<script type="application/ld+json">
+<%- JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'LodgingBusiness',
+  name: r.name,
+  description: r.description,
+  address: { '@type': 'PostalAddress', addressCountry: r.country, addressLocality: r.area },
+  aggregateRating: { '@type': 'AggregateRating', ratingValue: r.ratings.overall, bestRating: 10, worstRating: 0, ratingCount: 100 },
+  amenityFeature: r.amenities.map(a => ({ '@type': 'LocationFeatureSpecification', name: a, value: true })),
+}) %>
+</script>
+
+<div class="bg-ocean-950 pt-8 pb-12">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6">
+    <nav class="flex items-center gap-2 text-xs text-ocean-400 mb-4">
+      <a href="/" class="hover:text-ocean-200">Home</a>
+      <span>·</span>
+      <a href="/resorts/" class="hover:text-ocean-200">All Resorts</a>
+      <span>·</span>
+      <span class="text-ocean-300 truncate"><%= r.name %></span>
+    </nav>
+    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6 mt-4">
+      <div>
+        <div class="flex flex-wrap gap-2 mb-3">
+          <span class="text-xs font-sans font-semibold px-3 py-1 rounded-full <%= r.type === 'adults-only' ? 'bg-ocean-800 text-ocean-300' : 'bg-gold-700/30 text-gold-400' %>">
+            <%= r.type === 'adults-only' ? 'Adults Only' : 'Family' %>
+          </span>
+          <% if (r.ageNote) { %>
+            <span class="text-xs font-sans px-3 py-1 rounded-full bg-ocean-800 text-ocean-400"><%= r.ageNote %></span>
+          <% } %>
+        </div>
+        <h1 class="font-serif text-3xl md:text-4xl font-bold text-white leading-tight"><%= r.name %></h1>
+        <p class="font-sans text-ocean-400 mt-2 text-sm"><%= r.area %>, <%= r.country %> · Nearest airport: <%= r.airport %></p>
+      </div>
+      <div class="shrink-0 bg-ocean-900 border border-ocean-700 rounded-2xl px-6 py-4 text-center min-w-[120px]">
+        <div class="font-serif text-5xl font-bold tabular-nums leading-none <%= scoreColor(r.ratings.overall) %>"><%= r.ratings.overall %></div>
+        <div class="font-sans text-xs text-ocean-400 mt-1"><%= scoreLabel(r.ratings.overall) %></div>
+        <div class="font-sans text-xs text-ocean-600 mt-0.5">out of 10</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="max-w-4xl mx-auto px-4 sm:px-6 py-10">
+  <a href="<%= r.affiliateLink %>" target="_blank" rel="noopener noreferrer sponsored" class="flex items-center justify-center gap-2 w-full bg-ocean-900 hover:bg-ocean-950 text-white font-sans font-bold py-4 rounded-2xl text-base transition-colors mb-10 shadow-card">
+    Check Availability &amp; Prices →
+  </a>
+
+  <div class="grid grid-cols-3 gap-3 mb-10">
+    <% ['service', 'value', 'cleanliness'].forEach(k => { %>
+      <% if (r.ratings[k] !== null) { %>
+        <div class="bg-white border border-ocean-100 rounded-2xl p-4 text-center shadow-card">
+          <div class="font-serif text-2xl font-bold <%= scoreColor(r.ratings[k]) %>"><%= r.ratings[k] %></div>
+          <div class="font-sans text-xs text-ocean-500 mt-0.5"><%= RATING_LABELS[k] %></div>
+        </div>
+      <% } %>
+    <% }) %>
+  </div>
+
+  <section class="mb-10">
+    <h2 class="font-serif text-2xl font-bold text-ocean-950 mb-4"><%= r.name %> — Overview</h2>
+    <p class="font-sans text-ocean-700 leading-relaxed"><%= r.description %></p>
+  </section>
+
+  <section class="bg-white border border-ocean-100 rounded-2xl p-6 md:p-8 mb-10 shadow-card">
+    <h2 class="font-serif text-2xl font-bold text-ocean-950 mb-6">Rating Breakdown</h2>
+    <div class="space-y-4">
+      <% ['overall', 'food', 'beach', 'pool', 'atmosphere', 'location', 'room', 'value', 'cleanliness', 'service', 'sleepQuality'].forEach(k => { %>
+        <% if (r.ratings[k] !== null && r.ratings[k] !== undefined) { %>
+          <div class="flex items-center justify-between gap-4">
+            <span class="font-sans text-sm font-medium text-ocean-700 w-40 shrink-0"><%= RATING_LABELS[k] %></span>
+            <div class="flex-1 bg-ocean-100 rounded-full h-1.5 overflow-hidden">
+              <div class="h-full <%= r.ratings[k] >= 9.5 ? 'bg-emerald-500' : r.ratings[k] >= 9.0 ? 'bg-emerald-400' : r.ratings[k] >= 8.0 ? 'bg-amber-400' : 'bg-orange-400' %>" style="width: <%= (r.ratings[k] / 10) * 100 %>%"></div>
+            </div>
+            <span class="font-sans text-sm font-bold tabular-nums <%= scoreColor(r.ratings[k]) %> w-10 text-right"><%= r.ratings[k] %></span>
+          </div>
+        <% } %>
+      <% }) %>
+    </div>
+  </section>
+
+  <section class="mb-10">
+    <h2 class="font-serif text-2xl font-bold text-ocean-950 mb-5">Amenities</h2>
+    <div class="flex flex-wrap gap-2">
+      <% r.amenities.forEach(a => { %>
+        <span class="font-sans text-sm bg-white border border-ocean-200 text-ocean-700 rounded-full px-4 py-1.5 shadow-sm"><%= a %></span>
+      <% }) %>
+    </div>
+  </section>
+
+  <section class="bg-ocean-50 border border-ocean-100 rounded-2xl p-6 mb-10">
+    <h2 class="font-serif text-lg font-bold text-ocean-950 mb-3">Compare <%= r.name %></h2>
+    <div class="flex flex-col gap-2">
+      <% resorts.filter(o => o.slug !== r.slug).forEach(o => { %>
+        <a href="<%= pairUrl(r.slug, o.slug) %>" class="font-sans text-sm text-ocean-700 hover:text-ocean-950 hover:underline transition-colors"><%= r.name %> vs <%= o.name %> →</a>
+      <% }) %>
+    </div>
+  </section>
+
+  <% if (related.length > 0) { %>
+    <section>
+      <h2 class="font-serif text-2xl font-bold text-ocean-950 mb-6">You Might Also Like</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <% related.forEach(resort => { %>
+          <%- include('_resort-card', { resort }) %>
+        <% }) %>
+      </div>
+    </section>
+  <% } %>
+</div>

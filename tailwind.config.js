@@ -1,10 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: [
-    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
-  ],
+  content: ['./templates/**/*.ejs', './public/**/*.js'],
   theme: {
     extend: {
       colors: {
@@ -12,7 +8,9 @@ module.exports = {
           50:  '#f0f9ff',
           100: '#e0f2fe',
           200: '#bae6fd',
+          300: '#7dd3fc',
           400: '#38bdf8',
+          500: '#0ea5e9',
           600: '#0284c7',
           700: '#0369a1',
           800: '#075985',
@@ -26,14 +24,11 @@ module.exports = {
           600: '#d97706',
           700: '#b45309',
         },
-        sand: {
-          50:  '#fefce8',
-          100: '#fef9c3',
-        },
+        sand: { 50: '#fefce8', 100: '#fef9c3' },
       },
       fontFamily: {
-        serif: ['var(--font-playfair)', 'Georgia', 'serif'],
-        sans:  ['var(--font-inter)', 'system-ui', 'sans-serif'],
+        serif: ['"Playfair Display"', 'Georgia', 'serif'],
+        sans:  ['Inter', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
         card: '0 2px 16px 0 rgba(12,74,110,0.08)',

@@ -1,0 +1,116 @@
+<section class="relative bg-ocean-950 overflow-hidden">
+  <div class="absolute inset-0 opacity-[0.04]" style="background-image: radial-gradient(circle, #fff 1px, transparent 1px); background-size: 32px 32px;"></div>
+  <div class="relative max-w-7xl mx-auto px-4 sm:px-6 py-24 md:py-32 text-center">
+    <span class="inline-block text-xs font-sans font-semibold uppercase tracking-[0.2em] text-ocean-400 mb-6">All-Inclusive Resort Guide · 2025</span>
+    <h1 class="font-serif text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-[1.1] mb-6">
+      Find Your Perfect<br />
+      <span class="text-transparent bg-clip-text bg-gradient-to-r from-gold-400 to-gold-300">All-Inclusive</span>
+    </h1>
+    <p class="font-sans text-lg md:text-xl text-ocean-300 max-w-2xl mx-auto mb-10 leading-relaxed">
+      Independent ratings across food, beach, pool, value, and service — so you can book with total confidence.
+    </p>
+    <div class="flex flex-col sm:flex-row gap-3 justify-center">
+      <a href="/resorts/" class="inline-block bg-white text-ocean-950 font-sans font-bold px-8 py-3.5 rounded-xl text-sm hover:bg-ocean-50 transition-colors shadow-lg">Browse All Resorts</a>
+      <a href="/compare/" class="inline-block bg-gold-500 hover:bg-gold-600 text-white font-sans font-bold px-8 py-3.5 rounded-xl text-sm transition-colors shadow-lg">Compare Resorts →</a>
+    </div>
+    <div class="mt-16 grid grid-cols-2 md:grid-cols-4 gap-px bg-ocean-800 rounded-2xl overflow-hidden border border-ocean-800">
+      <% [
+        { value: '11', label: 'Rating categories' },
+        { value: topResorts[0]?.ratings.overall.toFixed(1) || '9.9', label: 'Highest overall score' },
+        { value: countries.length, label: 'Destinations covered' },
+        { value: '100%', label: 'Independent' },
+      ].forEach(s => { %>
+        <div class="bg-ocean-900 py-5 px-4 text-center">
+          <div class="font-serif text-2xl font-bold text-white"><%= s.value %></div>
+          <div class="font-sans text-xs text-ocean-400 mt-1"><%= s.label %></div>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+</section>
+
+<section class="max-w-7xl mx-auto px-4 sm:px-6 py-20">
+  <div class="flex items-end justify-between mb-10">
+    <div>
+      <p class="font-sans text-xs font-semibold uppercase tracking-widest text-ocean-500 mb-2">Highest Rated</p>
+      <h2 class="font-serif text-3xl md:text-4xl font-bold text-ocean-950">Top All-Inclusive Resorts</h2>
+    </div>
+    <a href="/resorts/" class="hidden sm:flex items-center gap-1 font-sans text-sm font-medium text-ocean-700 hover:text-ocean-900 transition-colors">View all <span>→</span></a>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <% topResorts.forEach((resort, i) => { %>
+      <%- include('_resort-card', { resort, rank: i + 1 }) %>
+    <% }) %>
+  </div>
+</section>
+
+<section class="bg-ocean-50 border-y border-ocean-100 py-20 px-4 sm:px-6">
+  <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+    <div>
+      <p class="font-sans text-xs font-semibold uppercase tracking-widest text-ocean-500 mb-2">Side-by-Side</p>
+      <h2 class="font-serif text-3xl md:text-4xl font-bold text-ocean-950 mb-4">Compare Any Two Resorts</h2>
+      <p class="font-sans text-ocean-600 leading-relaxed mb-6">See how any two resorts stack up across food, beach, pool, service, value, and eleven rating categories — plus a full amenities checklist and our editorial verdict.</p>
+      <a href="/compare/" class="inline-block bg-ocean-900 hover:bg-ocean-950 text-white font-sans font-bold px-6 py-3 rounded-xl text-sm transition-colors">Start Comparing →</a>
+    </div>
+    <div class="space-y-2">
+      <% featuredPairs.forEach(({ a, b }) => { %>
+        <a href="<%= pairUrl(a.slug, b.slug) %>" class="flex items-center justify-between p-4 bg-white rounded-xl border border-ocean-100 hover:border-ocean-300 hover:shadow-card transition-all group">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <span class="text-ocean-400 group-hover:text-ocean-600 transition-colors shrink-0 text-sm">→</span>
+            <span class="font-sans text-sm text-ocean-800 group-hover:text-ocean-950 transition-colors truncate"><%= a.name %> vs <%= b.name %></span>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0 ml-3">
+            <span class="font-sans text-xs font-bold text-emerald-600"><%= a.ratings.overall %></span>
+            <span class="font-sans text-xs text-ocean-300">vs</span>
+            <span class="font-sans text-xs font-bold text-emerald-600"><%= b.ratings.overall %></span>
+          </div>
+        </a>
+      <% }) %>
+      <a href="/compare/" class="block text-center py-2 font-sans text-sm text-ocean-500 hover:text-ocean-800 transition-colors">View all comparisons →</a>
+    </div>
+  </div>
+</section>
+
+<section class="bg-ocean-950 py-20 px-4 sm:px-6">
+  <div class="max-w-7xl mx-auto">
+    <p class="font-sans text-xs font-semibold uppercase tracking-widest text-ocean-500 mb-2 text-center">Browse by Style</p>
+    <h2 class="font-serif text-3xl md:text-4xl font-bold text-white text-center mb-12">What Kind of Trip?</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <% [
+        { label: 'Adults Only', sub: 'Romantic escapes for adults 16+ or 18+', href: '/best-adults-only-all-inclusive-resorts/', icon: '🌙' },
+        { label: 'Family', sub: 'Welcoming for every age group', href: '/best-family-all-inclusive-resorts/', icon: '👨‍👩‍👧' },
+        { label: 'Best Value', sub: 'Highest value-for-money score', href: '/best-value-all-inclusive-resorts/', icon: '💰' },
+        { label: 'Best Beach', sub: 'Exceptional sand and water', href: '/best-beach-all-inclusive-resorts/', icon: '🏖️' },
+      ].forEach(c => { %>
+        <a href="<%= c.href %>" class="group bg-ocean-900 hover:bg-ocean-800 border border-ocean-800 hover:border-ocean-600 rounded-2xl p-6 transition-all">
+          <span class="text-4xl block mb-4"><%= c.icon %></span>
+          <p class="font-serif text-xl font-bold text-white mb-1.5 group-hover:text-gold-400 transition-colors"><%= c.label %></p>
+          <p class="font-sans text-sm text-ocean-400"><%= c.sub %></p>
+        </a>
+      <% }) %>
+    </div>
+  </div>
+</section>
+
+<section class="max-w-7xl mx-auto px-4 sm:px-6 py-20">
+  <p class="font-sans text-xs font-semibold uppercase tracking-widest text-ocean-500 mb-2">Where to Go</p>
+  <h2 class="font-serif text-3xl md:text-4xl font-bold text-ocean-950 mb-10">Browse by Destination</h2>
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <% countries.forEach(d => { %>
+      <a href="/destination/<%= d.slug %>/" class="group bg-white border border-ocean-100 hover:border-ocean-300 rounded-2xl p-6 shadow-card hover:shadow-card-hover transition-all text-center">
+        <p class="font-serif text-xl font-bold text-ocean-950 group-hover:text-ocean-700 transition-colors"><%= d.name %></p>
+        <p class="font-sans text-sm text-ocean-400 mt-1"><%= d.count %> <%= d.count === 1 ? 'resort' : 'resorts' %></p>
+      </a>
+    <% }) %>
+  </div>
+</section>
+
+<section class="border-t border-ocean-100 bg-white py-16 px-4 sm:px-6">
+  <div class="max-w-4xl mx-auto text-center">
+    <p class="font-sans text-xs font-semibold uppercase tracking-widest text-ocean-500 mb-2">Our Approach</p>
+    <h2 class="font-serif text-3xl font-bold text-ocean-950 mb-5">How We Rate Resorts</h2>
+    <p class="font-sans text-ocean-600 max-w-2xl mx-auto leading-relaxed">
+      Every resort is scored across eleven categories — food, beach, pool, atmosphere, location, rooms, value, cleanliness, service, and sleep quality — so you can make a decision that matches exactly what matters to you.
+    </p>
+  </div>
+</section>
