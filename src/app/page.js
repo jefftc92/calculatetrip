@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import ResortCard from '@/components/ResortCard'
-import { resorts, getResortsByType, getTopByRating } from '@/data/resorts'
+import { resorts } from '@/data/resorts'
 import { SITE_NAME, SITE_URL } from '@/lib/utils'
 
 export const metadata = {
@@ -19,80 +19,95 @@ const jsonLd = {
   '@type': 'WebSite',
   name: SITE_NAME,
   url: SITE_URL,
-  description: 'Independent ratings and reviews for the best all-inclusive resorts.',
 }
 
+const topResorts = [...resorts].sort((a, b) => b.ratings.overall - a.ratings.overall).slice(0, 3)
+
 const categories = [
-  {
-    label: 'Adults-Only Resorts',
-    description: 'Romantic getaways and solo retreats with a 16+ or 18+ policy.',
-    href: '/best-adults-only-all-inclusive-resorts/',
-    emoji: '🌙',
-  },
-  {
-    label: 'Family Resorts',
-    description: 'All-inclusives with activities, pools, and amenities for every age.',
-    href: '/best-family-all-inclusive-resorts/',
-    emoji: '👨‍👩‍👧',
-  },
-  {
-    label: 'Best Value',
-    description: 'Top-rated resorts where your money goes furthest.',
-    href: '/best-value-all-inclusive-resorts/',
-    emoji: '💰',
-  },
-  {
-    label: 'Beach Resorts',
-    description: 'All-inclusives with exceptional private or direct beach access.',
-    href: '/best-beach-all-inclusive-resorts/',
-    emoji: '🏖️',
-  },
+  { label: 'Adults Only',  sub: 'Romantic escapes, 16+ or 18+', href: '/best-adults-only-all-inclusive-resorts/', icon: '🌙' },
+  { label: 'Family',       sub: 'Fun for every age group',       href: '/best-family-all-inclusive-resorts/',        icon: '👨‍👩‍👧' },
+  { label: 'Best Value',   sub: 'Most bang for your budget',     href: '/best-value-all-inclusive-resorts/',         icon: '💰' },
+  { label: 'Best Beach',   sub: 'Exceptional sand & water',      href: '/best-beach-all-inclusive-resorts/',         icon: '🏖️' },
 ]
 
 const destinations = [
-  { name: 'Panama', slug: 'panama', count: 2 },
-  { name: 'Belize', slug: 'belize', count: 1 },
-  { name: 'Saint Lucia', slug: 'saint-lucia', count: 1 },
-  { name: 'British Virgin Islands', slug: 'british-virgin-islands', count: 1 },
+  { name: 'Panama',                 slug: 'panama',                  count: 2 },
+  { name: 'Belize',                 slug: 'belize',                  count: 1 },
+  { name: 'Saint Lucia',            slug: 'saint-lucia',             count: 1 },
+  { name: 'British Virgin Islands', slug: 'british-virgin-islands',  count: 1 },
 ]
 
-const topResorts = [...resorts].sort((a, b) => b.ratings.overall - a.ratings.overall).slice(0, 3)
+const stats = [
+  { value: '11',          label: 'Rating categories' },
+  { value: '9.9',         label: 'Highest overall score' },
+  { value: '4',           label: 'Destinations covered' },
+  { value: '100%',        label: 'Independent' },
+]
 
 export default function HomePage() {
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
-      {/* Hero */}
-      <section className="bg-gradient-to-br from-green-800 to-green-600 text-white py-20 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl md:text-5xl font-extrabold leading-tight mb-4">
-            Find Your Perfect All-Inclusive Resort
+      {/* ── Hero ── */}
+      <section className="relative bg-ocean-950 overflow-hidden">
+        {/* subtle grid texture */}
+        <div className="absolute inset-0 opacity-[0.04]"
+          style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-24 md:py-32 text-center">
+          <span className="inline-block text-xs font-sans font-semibold uppercase tracking-[0.2em] text-ocean-400 mb-6">
+            All-Inclusive Resort Guide · 2025
+          </span>
+          <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-[1.1] mb-6">
+            Find Your Perfect<br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold-400 to-gold-300">
+              All-Inclusive
+            </span>
           </h1>
-          <p className="text-lg md:text-xl text-green-100 max-w-2xl mx-auto mb-8">
-            Independent ratings across food, beach, pool, value, and service — so you can book with confidence.
+          <p className="font-sans text-lg md:text-xl text-ocean-300 max-w-2xl mx-auto mb-10 leading-relaxed">
+            Independent ratings across food, beach, pool, value, and service — so you can book with total confidence.
           </p>
-          <Link
-            href="/resorts/"
-            className="inline-block bg-white text-green-800 font-bold px-8 py-3.5 rounded-full text-base hover:bg-green-50 transition-colors shadow-lg"
-          >
-            Browse All Resorts
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link
+              href="/resorts/"
+              className="inline-block bg-white text-ocean-950 font-sans font-bold px-8 py-3.5 rounded-xl text-sm hover:bg-ocean-50 transition-colors shadow-lg"
+            >
+              Browse All Resorts
+            </Link>
+            <Link
+              href="/best-adults-only-all-inclusive-resorts/"
+              className="inline-block border border-ocean-700 text-ocean-200 font-sans font-medium px-8 py-3.5 rounded-xl text-sm hover:bg-ocean-900 transition-colors"
+            >
+              Adults-Only Resorts
+            </Link>
+          </div>
+
+          {/* Stats row */}
+          <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-px bg-ocean-800 rounded-2xl overflow-hidden border border-ocean-800">
+            {stats.map((s) => (
+              <div key={s.label} className="bg-ocean-900 py-5 px-4 text-center">
+                <div className="font-serif text-2xl font-bold text-white">{s.value}</div>
+                <div className="font-sans text-xs text-ocean-400 mt-1">{s.label}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* Top Rated */}
-      <section className="max-w-6xl mx-auto px-4 py-16">
-        <div className="flex items-center justify-between mb-8">
+      {/* ── Top Rated ── */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-20">
+        <div className="flex items-end justify-between mb-10">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Top-Rated All-Inclusive Resorts</h2>
-            <p className="text-gray-500 mt-1">The highest-scoring resorts across all categories</p>
+            <p className="font-sans text-xs font-semibold uppercase tracking-widest text-ocean-500 mb-2">
+              Highest Rated
+            </p>
+            <h2 className="font-serif text-3xl md:text-4xl font-bold text-ocean-950">
+              Top All-Inclusive Resorts
+            </h2>
           </div>
-          <Link href="/resorts/" className="text-sm font-medium text-green-700 hover:underline hidden sm:block">
-            View all &rarr;
+          <Link href="/resorts/" className="hidden sm:flex items-center gap-1 font-sans text-sm font-medium text-ocean-700 hover:text-ocean-900 transition-colors">
+            View all <span>→</span>
           </Link>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -100,72 +115,60 @@ export default function HomePage() {
             <ResortCard key={r.slug} resort={r} rank={i + 1} />
           ))}
         </div>
-        <div className="mt-6 text-center sm:hidden">
-          <Link href="/resorts/" className="text-sm font-medium text-green-700 hover:underline">
-            View all resorts &rarr;
-          </Link>
+        <div className="mt-8 text-center sm:hidden">
+          <Link href="/resorts/" className="font-sans text-sm font-medium text-ocean-700">View all resorts →</Link>
         </div>
       </section>
 
-      {/* Categories */}
-      <section className="bg-white py-16 px-4">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Browse by Category</h2>
-          <p className="text-gray-500 mb-8">Find the right resort for your travel style</p>
+      {/* ── Categories ── */}
+      <section className="bg-ocean-950 py-20 px-4 sm:px-6">
+        <div className="max-w-7xl mx-auto">
+          <p className="font-sans text-xs font-semibold uppercase tracking-widest text-ocean-500 mb-2 text-center">Browse by Style</p>
+          <h2 className="font-serif text-3xl md:text-4xl font-bold text-white text-center mb-12">
+            What Kind of Trip?
+          </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {categories.map((c) => (
               <Link
                 key={c.href}
                 href={c.href}
-                className="group bg-gray-50 hover:bg-green-50 border border-gray-200 hover:border-green-200 rounded-xl p-5 transition-all"
+                className="group bg-ocean-900 hover:bg-ocean-800 border border-ocean-800 hover:border-ocean-600 rounded-2xl p-6 transition-all"
               >
-                <p className="text-3xl mb-3">{c.emoji}</p>
-                <p className="font-semibold text-gray-900 group-hover:text-green-800 mb-1">{c.label}</p>
-                <p className="text-sm text-gray-500">{c.description}</p>
+                <span className="text-4xl block mb-4">{c.icon}</span>
+                <p className="font-serif text-xl font-bold text-white mb-1.5 group-hover:text-gold-400 transition-colors">{c.label}</p>
+                <p className="font-sans text-sm text-ocean-400">{c.sub}</p>
               </Link>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Destinations */}
-      <section className="max-w-6xl mx-auto px-4 py-16">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Browse by Destination</h2>
-        <p className="text-gray-500 mb-8">All-inclusive resorts across the Caribbean and Latin America</p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      {/* ── Destinations ── */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-20">
+        <p className="font-sans text-xs font-semibold uppercase tracking-widest text-ocean-500 mb-2">Where to Go</p>
+        <h2 className="font-serif text-3xl md:text-4xl font-bold text-ocean-950 mb-10">Browse by Destination</h2>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {destinations.map((d) => (
             <Link
               key={d.slug}
               href={`/destination/${d.slug}/`}
-              className="group bg-white border border-gray-200 hover:border-green-300 rounded-xl p-5 text-center transition-all hover:shadow-md"
+              className="group relative bg-white border border-ocean-100 hover:border-ocean-300 rounded-2xl p-6 shadow-card hover:shadow-card-hover transition-all text-center"
             >
-              <p className="font-semibold text-gray-900 group-hover:text-green-700 transition-colors">{d.name}</p>
-              <p className="text-sm text-gray-400 mt-1">{d.count} {d.count === 1 ? 'resort' : 'resorts'}</p>
+              <p className="font-serif text-xl font-bold text-ocean-950 group-hover:text-ocean-700 transition-colors">{d.name}</p>
+              <p className="font-sans text-sm text-ocean-400 mt-1">{d.count} {d.count === 1 ? 'resort' : 'resorts'}</p>
             </Link>
           ))}
         </div>
       </section>
 
-      {/* Trust signals */}
-      <section className="bg-green-900 text-white py-14 px-4">
+      {/* ── Trust band ── */}
+      <section className="border-t border-ocean-100 bg-white py-16 px-4 sm:px-6">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-2xl font-bold mb-4">How We Rate Resorts</h2>
-          <p className="text-green-200 max-w-2xl mx-auto text-base leading-relaxed">
-            Every resort on CalculateTrip is scored across eleven dimensions — food, beach, pool, atmosphere, location, rooms, value, cleanliness, service, and sleep quality. Ratings are independently researched and updated regularly so you can trust what you read.
+          <p className="font-sans text-xs font-semibold uppercase tracking-widest text-ocean-500 mb-2">Our Approach</p>
+          <h2 className="font-serif text-3xl font-bold text-ocean-950 mb-5">How We Rate Resorts</h2>
+          <p className="font-sans text-ocean-600 max-w-2xl mx-auto leading-relaxed">
+            Every resort is scored across eleven categories — food, beach, pool, atmosphere, location, rooms, value, cleanliness, service, and sleep quality — so you can make a decision that matches exactly what matters to you.
           </p>
-          <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-6">
-            {[
-              { label: '11 rating categories', sub: 'per resort' },
-              { label: 'Independent', sub: 'no paid placements' },
-              { label: 'Affiliate links', sub: 'at no cost to you' },
-              { label: 'Updated 2025', sub: 'current data' },
-            ].map((s) => (
-              <div key={s.label} className="bg-green-800 rounded-xl px-4 py-5">
-                <p className="font-bold text-lg">{s.label}</p>
-                <p className="text-green-300 text-sm mt-0.5">{s.sub}</p>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
     </>

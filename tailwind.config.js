@@ -8,20 +8,36 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        brand: {
-          50:  '#f0fdf4',
-          100: '#dcfce7',
-          500: '#22c55e',
-          600: '#16a34a',
-          700: '#15803d',
-          900: '#14532d',
+        ocean: {
+          50:  '#f0f9ff',
+          100: '#e0f2fe',
+          200: '#bae6fd',
+          400: '#38bdf8',
+          600: '#0284c7',
+          700: '#0369a1',
+          800: '#075985',
+          900: '#0c4a6e',
+          950: '#082f49',
+        },
+        gold: {
+          300: '#fcd34d',
+          400: '#fbbf24',
+          500: '#f59e0b',
+          600: '#d97706',
+          700: '#b45309',
         },
         sand: {
           50:  '#fefce8',
           100: '#fef9c3',
-          400: '#facc15',
-          600: '#ca8a04',
         },
+      },
+      fontFamily: {
+        serif: ['var(--font-playfair)', 'Georgia', 'serif'],
+        sans:  ['var(--font-inter)', 'system-ui', 'sans-serif'],
+      },
+      boxShadow: {
+        card: '0 2px 16px 0 rgba(12,74,110,0.08)',
+        'card-hover': '0 8px 32px 0 rgba(12,74,110,0.16)',
       },
     },
   },
