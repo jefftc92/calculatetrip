@@ -5,6 +5,10 @@ expertMode = true
 
 [[ports]]
 localPort = 3000
+externalPort = 3000
+
+[[ports]]
+localPort = 24605
 externalPort = 80
 
 [workflows]
