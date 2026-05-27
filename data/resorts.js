@@ -13,6 +13,7 @@ const resorts = [
     heroTagline: 'Overwater bungalows in a remote Panamanian rainforest archipelago.',
     amenities: ['Overwater bungalows', 'Private plunge pools', 'Snorkeling', 'Kayaking', 'Guided wildlife tours', 'Spa', 'All-inclusive dining', 'Open bar', 'Sunset cocktails', 'Boat transfers'],
     affiliateLink: 'https://www.tripadvisor.com/Hotel_Review-g635538-d8534272-Reviews-Nayara_Bocas_del_Toro-Bocas_del_Toro_Bocas_del_Toro_Province.html',
+    agodaLink: 'https://www.agoda.com/partners/partnersearch.aspx?pcs=1&cid=1959986&hl=en-us&hid=70643919',
     ratings: { overall: 9.9, food: 9.8, beach: null, pool: 9.6, atmosphere: 9.9, location: 9.7, room: 9.9, value: 9.2, cleanliness: 9.9, service: 9.9, sleepQuality: 9.8 },
   },
   {
@@ -29,6 +30,7 @@ const resorts = [
     heroTagline: 'A 16-cabana private-island all-inclusive on the Belize Barrier Reef.',
     amenities: ['Private island', 'Beach cabanas', 'Snorkeling', 'Unlimited shore diving', 'Kayaking', 'Paddleboarding', 'Windsurfing', 'All-inclusive meals', 'Open bar', 'Island transport'],
     affiliateLink: 'https://www.tripadvisor.com/Hotel_Review-g291971-d1567892-Reviews-Coco_Plum_Island_Resort-Dangriga_Stann_Creek_District.html',
+    agodaLink: 'https://www.agoda.com/partners/partnersearch.aspx?pcs=1&cid=1959986&hl=en-us&hid=260388',
     ratings: { overall: 9.8, food: 9.4, beach: 9.9, pool: 7.0, atmosphere: 9.9, location: 9.9, room: 9.5, value: 9.3, cleanliness: 9.8, service: 9.9, sleepQuality: 9.7 },
   },
   {
@@ -45,6 +47,7 @@ const resorts = [
     heroTagline: 'Open-wall sanctuaries with private infinity pools above the Pitons.',
     amenities: ['Private infinity pools', 'Open-wall sanctuaries', 'Piton views', 'Sky butlers', 'Private beach access', 'World-class snorkeling', 'Full spa', 'Fine dining', 'Open bar', 'Sunset cruises'],
     affiliateLink: 'https://www.tripadvisor.com/Hotel_Review-g147394-d150907-Reviews-Jade_Mountain-Soufriere_St_Lucia.html',
+    agodaLink: 'https://www.agoda.com/partners/partnersearch.aspx?pcs=1&cid=1959986&hl=en-us&hid=6018',
     ratings: { overall: 9.7, food: 9.4, beach: 8.5, pool: 9.9, atmosphere: 9.9, location: 9.9, room: 9.9, value: 8.5, cleanliness: 9.8, service: 9.8, sleepQuality: 9.8 },
   },
   {
@@ -61,6 +64,7 @@ const resorts = [
     heroTagline: 'An 850-acre private-island nature reserve with seven beaches.',
     amenities: ['Private island (exclusive use available)', 'Seven private beaches', 'Tennis courts', 'Organic farm', 'Nature trails', 'Snorkeling', 'Kayaking', 'Wildlife sanctuary', 'All-inclusive dining', 'Open bar'],
     affiliateLink: 'https://www.tripadvisor.com/Hotel_Review-g147362-d150923-Reviews-Guana_Island-Guana_Island_British_Virgin_Islands.html',
+    agodaLink: 'https://www.agoda.com/search?q=Guana+Island+British+Virgin+Islands&cid=1959986',
     ratings: { overall: 9.5, food: 9.5, beach: 9.7, pool: 7.5, atmosphere: 9.8, location: 9.8, room: 9.3, value: 8.8, cleanliness: 9.7, service: 9.8, sleepQuality: 9.8 },
   },
   {
@@ -77,6 +81,7 @@ const resorts = [
     heroTagline: 'Coppola\'s Balinese-inspired beachfront all-inclusive in Placencia, Belize.',
     amenities: ['Private beach', 'Balinese-style cottages', 'Scuba diving', 'Snorkeling', 'Kayaking', 'Paddleboarding', 'Spa', 'Culinary programs', 'All-inclusive dining', 'Open bar'],
     affiliateLink: 'https://www.tripadvisor.com/Hotel_Review-g291969-d306359-Reviews-Turtle_Inn-Placencia_Stann_Creek_District.html',
+    agodaLink: 'https://www.agoda.com/search?q=Turtle+Inn+Placencia+Belize&cid=1959986',
     ratings: { overall: 9.4, food: 9.7, beach: 9.3, pool: 8.5, atmosphere: 9.6, location: 9.2, room: 9.5, value: 8.7, cleanliness: 9.7, service: 9.7, sleepQuality: 9.6 },
   },
 ]

@@ -12,35 +12,75 @@
 
 <div class="max-w-5xl mx-auto px-4 sm:px-6 -mt-6 pb-16">
 
-  <!-- Picker: works without JS via native form submit. Vanilla JS upgrades it. -->
+  <!-- Picker: cascading country → area → resort selects. Requires JS. -->
   <div class="bg-white border border-ocean-100 rounded-2xl shadow-card p-6 mb-12" id="compare-picker-root">
-    <p class="font-sans text-sm text-ocean-500 mb-5">Pick any two resorts to compare side by side.</p>
+    <p class="font-sans text-sm text-ocean-500 mb-5">Select country, then area, then resort for each slot.</p>
     <form id="compare-form" class="space-y-4">
-      <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-3 items-center">
-        <div>
-          <label class="block font-sans text-xs font-bold uppercase tracking-widest text-ocean-500 mb-1.5">Resort A</label>
-          <select name="a" id="resort-a" required class="w-full font-sans text-sm bg-white border border-ocean-200 text-ocean-900 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ocean-500">
-            <option value="">Select a resort</option>
-            <% resorts.forEach(r => { %>
-              <option value="<%= r.slug %>"><%= r.name %></option>
-            <% }) %>
-          </select>
+      <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-6 items-start">
+
+        <!-- Slot A -->
+        <div class="space-y-2">
+          <p class="font-sans text-xs font-bold uppercase tracking-widest text-ocean-500">Resort A</p>
+          <div>
+            <label for="country-a" class="block font-sans text-xs text-ocean-400 mb-1">Country</label>
+            <select id="country-a" class="w-full font-sans text-sm bg-white border border-ocean-200 text-ocean-900 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ocean-500">
+              <option value="">Select country</option>
+              <% [...new Set(resorts.map(r => r.country))].forEach(c => { %>
+                <option value="<%= c %>"><%= c %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div id="area-row-a" class="hidden">
+            <label for="area-a" class="block font-sans text-xs text-ocean-400 mb-1">Area</label>
+            <select id="area-a" disabled class="w-full font-sans text-sm bg-white border border-ocean-200 text-ocean-900 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ocean-500 disabled:opacity-40">
+              <option value="">Select area</option>
+            </select>
+          </div>
+          <div>
+            <label for="resort-a" class="block font-sans text-xs text-ocean-400 mb-1">Resort</label>
+            <select id="resort-a" name="a" disabled class="w-full font-sans text-sm bg-white border border-ocean-200 text-ocean-900 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ocean-500 disabled:opacity-40">
+              <option value="">Select resort</option>
+            </select>
+          </div>
         </div>
-        <span class="font-sans text-sm font-bold text-ocean-400 text-center sm:mt-7">vs</span>
-        <div>
-          <label class="block font-sans text-xs font-bold uppercase tracking-widest text-ocean-500 mb-1.5">Resort B</label>
-          <select name="b" id="resort-b" required class="w-full font-sans text-sm bg-white border border-ocean-200 text-ocean-900 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ocean-500">
-            <option value="">Select a resort</option>
-            <% resorts.forEach(r => { %>
-              <option value="<%= r.slug %>"><%= r.name %></option>
-            <% }) %>
-          </select>
+
+        <span class="font-sans text-sm font-bold text-ocean-400 text-center sm:mt-8">vs</span>
+
+        <!-- Slot B -->
+        <div class="space-y-2">
+          <p class="font-sans text-xs font-bold uppercase tracking-widest text-ocean-500">Resort B</p>
+          <div>
+            <label for="country-b" class="block font-sans text-xs text-ocean-400 mb-1">Country</label>
+            <select id="country-b" class="w-full font-sans text-sm bg-white border border-ocean-200 text-ocean-900 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ocean-500">
+              <option value="">Select country</option>
+              <% [...new Set(resorts.map(r => r.country))].forEach(c => { %>
+                <option value="<%= c %>"><%= c %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div id="area-row-b" class="hidden">
+            <label for="area-b" class="block font-sans text-xs text-ocean-400 mb-1">Area</label>
+            <select id="area-b" disabled class="w-full font-sans text-sm bg-white border border-ocean-200 text-ocean-900 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ocean-500 disabled:opacity-40">
+              <option value="">Select area</option>
+            </select>
+          </div>
+          <div>
+            <label for="resort-b" class="block font-sans text-xs text-ocean-400 mb-1">Resort</label>
+            <select id="resort-b" name="b" disabled class="w-full font-sans text-sm bg-white border border-ocean-200 text-ocean-900 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ocean-500 disabled:opacity-40">
+              <option value="">Select resort</option>
+            </select>
+          </div>
         </div>
+
       </div>
-      <button type="submit" class="w-full font-sans text-sm font-bold bg-ocean-900 hover:bg-ocean-950 text-white rounded-xl py-3 transition-colors">Compare Resorts →</button>
+      <button type="submit" id="compare-btn" disabled class="w-full font-sans text-sm font-bold bg-ocean-900 hover:bg-ocean-950 disabled:bg-ocean-300 text-white rounded-xl py-3 transition-colors">Compare Resorts →</button>
       <p id="compare-error" class="hidden font-sans text-sm text-red-600"></p>
     </form>
   </div>
+
+  <script id="resort-data" type="application/json">
+    <%- JSON.stringify(resorts.map(r => ({ slug: r.slug, name: r.name, country: r.country, area: r.area }))) %>
+  </script>
   <script src="/compare-picker.js" defer></script>
 
   <!-- Pre-rendered link list: this is what Google indexes -->
