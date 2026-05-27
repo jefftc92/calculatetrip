@@ -1,80 +1,74 @@
 <div class="bg-ocean-950 pt-10 pb-16 px-4 sm:px-6">
-  <div class="max-w-5xl mx-auto">
+  <div class="max-w-2xl mx-auto">
     <nav class="flex items-center gap-2 text-xs text-ocean-400 mb-4">
       <a href="/" class="hover:text-ocean-200">Home</a>
       <span>·</span>
       <span class="text-ocean-300">Compare Resorts</span>
     </nav>
     <h1 class="font-serif text-4xl md:text-5xl font-bold text-white">Compare Resorts</h1>
-    <p class="font-sans text-ocean-400 mt-2 max-w-lg text-sm">Side-by-side ratings, amenities, and our editorial verdict for any two all-inclusive resorts.</p>
+    <p class="font-sans text-ocean-400 mt-2 text-sm">Side-by-side ratings and our editorial verdict for any two all-inclusive resorts.</p>
   </div>
 </div>
 
-<div class="max-w-5xl mx-auto px-4 sm:px-6 -mt-6 pb-16">
+<div class="max-w-2xl mx-auto px-4 sm:px-6 -mt-6 pb-16">
 
-  <!-- Picker: cascading country → area → resort selects. Requires JS. -->
+  <!-- Picker -->
   <div class="bg-white border border-ocean-100 rounded-2xl shadow-card p-6 mb-12" id="compare-picker-root">
-    <p class="font-sans text-sm text-ocean-500 mb-5">Select country, then area, then resort for each slot.</p>
-    <form id="compare-form" class="space-y-4">
-      <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-6 items-start">
+    <form id="compare-form" class="space-y-3">
 
-        <!-- Slot A -->
+      <!-- Slot A -->
+      <div class="rounded-xl border border-ocean-100 bg-ocean-50/40 p-4">
+        <p class="font-sans text-xs font-bold uppercase tracking-widest text-ocean-500 flex items-center gap-2 mb-3">
+          <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-ocean-900 text-white text-[10px] font-black shrink-0">A</span>
+          First Resort
+        </p>
         <div class="space-y-2">
-          <p class="font-sans text-xs font-bold uppercase tracking-widest text-ocean-500">Resort A</p>
-          <div>
-            <label for="country-a" class="block font-sans text-xs text-ocean-400 mb-1">Country</label>
-            <select id="country-a" class="w-full font-sans text-sm bg-white border border-ocean-200 text-ocean-900 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ocean-500">
-              <option value="">Select country</option>
-              <% [...new Set(resorts.map(r => r.country))].forEach(c => { %>
-                <option value="<%= c %>"><%= c %></option>
-              <% }) %>
-            </select>
-          </div>
-          <div id="area-row-a" class="hidden">
-            <label for="area-a" class="block font-sans text-xs text-ocean-400 mb-1">Area</label>
-            <select id="area-a" disabled class="w-full font-sans text-sm bg-white border border-ocean-200 text-ocean-900 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ocean-500 disabled:opacity-40">
-              <option value="">Select area</option>
-            </select>
-          </div>
-          <div>
-            <label for="resort-a" class="block font-sans text-xs text-ocean-400 mb-1">Resort</label>
-            <select id="resort-a" name="a" disabled class="w-full font-sans text-sm bg-white border border-ocean-200 text-ocean-900 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ocean-500 disabled:opacity-40">
-              <option value="">Select resort</option>
-            </select>
-          </div>
+          <select id="country-a" class="w-full font-sans text-sm bg-white border border-ocean-200 text-ocean-900 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-ocean-500">
+            <option value="">Select country</option>
+            <% [...new Set(resorts.map(r => r.country))].sort().forEach(c => { %>
+              <option value="<%= c %>"><%= c %></option>
+            <% }) %>
+          </select>
+          <select id="area-a" disabled class="w-full font-sans text-sm bg-white border border-ocean-200 text-ocean-900 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-ocean-500 disabled:opacity-40 hidden" id="area-a">
+            <option value="">Select region / area</option>
+          </select>
+          <select id="resort-a" name="a" disabled class="w-full font-sans text-sm bg-white border border-ocean-200 text-ocean-900 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-ocean-500 disabled:opacity-40">
+            <option value="">Select resort</option>
+          </select>
         </div>
-
-        <span class="font-sans text-sm font-bold text-ocean-400 text-center sm:mt-8">vs</span>
-
-        <!-- Slot B -->
-        <div class="space-y-2">
-          <p class="font-sans text-xs font-bold uppercase tracking-widest text-ocean-500">Resort B</p>
-          <div>
-            <label for="country-b" class="block font-sans text-xs text-ocean-400 mb-1">Country</label>
-            <select id="country-b" class="w-full font-sans text-sm bg-white border border-ocean-200 text-ocean-900 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ocean-500">
-              <option value="">Select country</option>
-              <% [...new Set(resorts.map(r => r.country))].forEach(c => { %>
-                <option value="<%= c %>"><%= c %></option>
-              <% }) %>
-            </select>
-          </div>
-          <div id="area-row-b" class="hidden">
-            <label for="area-b" class="block font-sans text-xs text-ocean-400 mb-1">Area</label>
-            <select id="area-b" disabled class="w-full font-sans text-sm bg-white border border-ocean-200 text-ocean-900 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ocean-500 disabled:opacity-40">
-              <option value="">Select area</option>
-            </select>
-          </div>
-          <div>
-            <label for="resort-b" class="block font-sans text-xs text-ocean-400 mb-1">Resort</label>
-            <select id="resort-b" name="b" disabled class="w-full font-sans text-sm bg-white border border-ocean-200 text-ocean-900 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ocean-500 disabled:opacity-40">
-              <option value="">Select resort</option>
-            </select>
-          </div>
-        </div>
-
       </div>
-      <button type="submit" id="compare-btn" disabled class="w-full font-sans text-sm font-bold bg-ocean-900 hover:bg-ocean-950 disabled:bg-ocean-300 text-white rounded-xl py-3 transition-colors">Compare Resorts →</button>
-      <p id="compare-error" class="hidden font-sans text-sm text-red-600"></p>
+
+      <!-- vs divider -->
+      <div class="flex items-center gap-3 py-1">
+        <div class="flex-1 h-px bg-ocean-100"></div>
+        <span class="font-sans text-xs font-bold uppercase tracking-widest text-ocean-400">vs</span>
+        <div class="flex-1 h-px bg-ocean-100"></div>
+      </div>
+
+      <!-- Slot B -->
+      <div class="rounded-xl border border-ocean-100 bg-ocean-50/40 p-4">
+        <p class="font-sans text-xs font-bold uppercase tracking-widest text-ocean-500 flex items-center gap-2 mb-3">
+          <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-ocean-900 text-white text-[10px] font-black shrink-0">B</span>
+          Second Resort
+        </p>
+        <div class="space-y-2">
+          <select id="country-b" class="w-full font-sans text-sm bg-white border border-ocean-200 text-ocean-900 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-ocean-500">
+            <option value="">Select country</option>
+            <% [...new Set(resorts.map(r => r.country))].sort().forEach(c => { %>
+              <option value="<%= c %>"><%= c %></option>
+            <% }) %>
+          </select>
+          <select id="area-b" disabled class="w-full font-sans text-sm bg-white border border-ocean-200 text-ocean-900 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-ocean-500 disabled:opacity-40 hidden">
+            <option value="">Select region / area</option>
+          </select>
+          <select id="resort-b" name="b" disabled class="w-full font-sans text-sm bg-white border border-ocean-200 text-ocean-900 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-ocean-500 disabled:opacity-40">
+            <option value="">Select resort</option>
+          </select>
+        </div>
+      </div>
+
+      <button type="submit" id="compare-btn" disabled class="w-full font-sans text-sm font-bold bg-ocean-900 hover:bg-ocean-950 disabled:bg-ocean-300 text-white rounded-xl py-3 transition-colors mt-1">Compare Resorts →</button>
+      <p id="compare-error" class="hidden font-sans text-sm text-red-600 text-center"></p>
     </form>
   </div>
 
@@ -97,15 +91,15 @@
   <div class="mb-12 max-w-2xl">
     <h2 class="font-serif text-2xl font-bold text-ocean-950 mb-3">About Our Compare Tool</h2>
     <p class="font-sans text-sm text-ocean-600 leading-relaxed">
-      We aggregate verified guest reviews from major booking platforms to score every resort across eleven categories: food, beach, pool, atmosphere, location, rooms, value, cleanliness, service, and sleep quality. The overall score is a weighted composite designed to reflect the full experience — not just the highlights. Pick any two resorts above to see a full side-by-side breakdown, amenities checklist, and our editorial verdict. Affiliate links are disclosed and never influence ratings.
+      We aggregate verified guest reviews from major booking platforms to score every resort across eleven categories: food, beach, pool, atmosphere, location, rooms, value, cleanliness, service, and sleep quality. The overall score is a weighted composite designed to reflect the full experience — not just the highlights. Pick any two resorts above to see a full side-by-side breakdown and our editorial verdict. Affiliate links are disclosed and never influence ratings.
     </p>
   </div>
 
   <h2 class="font-serif text-2xl font-bold text-ocean-950 mb-2">FAQs</h2>
   <div class="divide-y divide-ocean-100">
     <% [
-      { q: 'How do I use the compare tool?', a: 'Use the form above to pick two resorts and click "Compare Resorts." You will be taken to a side-by-side breakdown of scores, amenities, and our editorial verdict.' },
-      { q: 'How many resorts can I compare at once?', a: 'The tool supports head-to-head comparisons between two resorts, covering eleven rating categories plus a full amenities checklist.' },
+      { q: 'How do I use the compare tool?', a: 'Select a country, then choose a resort for each slot, then click "Compare Resorts." You\'ll land on a side-by-side breakdown of scores and our editorial verdict.' },
+      { q: 'How many resorts can I compare at once?', a: 'The tool supports head-to-head comparisons between two resorts across eleven rating categories. On the comparison page you can add up to three more resorts to compare up to five side by side.' },
       { q: 'Where do the scores come from?', a: 'Scores are aggregated from verified guest reviews on major booking platforms, weighted for recency and review volume. Each category — food, beach, pool, atmosphere, location, rooms, value, cleanliness, service, and sleep quality — is scored independently out of 10.' },
       { q: 'Are these resorts truly all-inclusive?', a: 'Yes — every resort in our database is verified all-inclusive. Core inclusions (accommodation, meals, drinks, core activities) are confirmed before listing. Some premium extras like spa treatments or specialty restaurants may carry additional charges.' },
       { q: 'How current is the data?', a: 'Resort scores are reviewed continuously and reflect the most current available guest review aggregates.' },

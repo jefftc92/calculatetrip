@@ -1,9 +1,3 @@
-// Adds dynamic "+ Add Resort" functionality to comparison pages.
-// 2-resort pages stay statically rendered for SEO. When ?add=<slug>
-// query params are present, JS re-renders the comparison body with N
-// columns (max 5 total, matching Car and Driver). The base 2-resort URL
-// is what Google indexes — extra-column variants are noindex.
-
 (function () {
   const MAX_TOTAL = 5
 
@@ -47,10 +41,7 @@
     return 'Fair'
   }
 
-  // ---------- Render with extras ----------
-
   function gridColsClass(n) {
-    // Tailwind classes won't work for dynamic n, so use inline style
     return `repeat(${n}, minmax(70px, 90px))`
   }
 
@@ -59,18 +50,22 @@
     if (!strip) return
     strip.innerHTML = ''
     strip.className = 'flex gap-3 overflow-x-auto pb-2'
-    slugs.forEach((slug, idx) => {
+    slugs.forEach(slug => {
       const r = bySlug[slug]
       const isBase = data.base.includes(slug)
+      const chips = r.amenities
+        .map(am => `<span class="font-sans text-[10px] bg-white/10 text-ocean-200 px-2 py-0.5 rounded-full leading-tight">${am}</span>`)
+        .join('')
       const card = document.createElement('div')
-      card.className = 'rounded-2xl p-4 sm:p-5 text-center border bg-white/5 border-white/10 relative flex-1 min-w-[160px]'
+      card.className = 'rounded-2xl p-4 sm:p-5 border bg-white/5 border-white/10 relative flex-1 min-w-[160px]'
       card.innerHTML = `
         ${!isBase ? `<button type="button" data-remove="${slug}" class="absolute top-2 right-2 text-white/40 hover:text-white text-lg leading-none w-6 h-6 flex items-center justify-center rounded-full hover:bg-white/10">×</button>` : ''}
         <a href="/resorts/${r.slug}/" class="font-serif text-base sm:text-lg font-bold text-white hover:text-gold-300 transition-colors block leading-snug mb-1 pr-4">${r.name}</a>
         <p class="font-sans text-xs text-ocean-400 mb-3">${r.country} · ${r.type === 'adults-only' ? 'Adults Only' : 'Family'}</p>
         <div class="font-serif text-4xl font-bold tabular-nums ${scoreColor(r.ratings.overall)}">${r.ratings.overall}</div>
-        <div class="font-sans text-xs text-ocean-400 mt-0.5">${scoreLabel(r.ratings.overall)}</div>
-        <a href="${r.agodaLink}" target="_blank" rel="noopener noreferrer sponsored" class="mt-4 block font-sans text-sm font-semibold rounded-xl py-2.5 transition-colors bg-gold-500 hover:bg-gold-600 text-white">Book on Agoda →</a>
+        <div class="font-sans text-xs text-ocean-400 mt-0.5 mb-4">${scoreLabel(r.ratings.overall)}</div>
+        <div class="flex flex-wrap gap-1 mb-4">${chips}</div>
+        <a href="${r.agodaLink}" target="_blank" rel="noopener noreferrer sponsored" class="block font-sans text-sm font-semibold rounded-xl py-2.5 transition-colors text-center bg-gold-500 hover:bg-gold-600 text-white">Check Prices →</a>
       `
       strip.appendChild(card)
     })
@@ -84,9 +79,7 @@
     }
     strip.querySelectorAll('[data-remove]').forEach(btn => {
       btn.addEventListener('click', () => {
-        const slug = btn.dataset.remove
-        const extras = getExtras().filter(s => s !== slug)
-        setExtras(extras)
+        setExtras(getExtras().filter(s => s !== btn.dataset.remove))
       })
     })
   }
@@ -94,69 +87,36 @@
   function renderRatingsTable(slugs) {
     const wrap = document.getElementById('ratings-table')
     if (!wrap) return
-    const cols = slugs.length
-    const tmpl = `1fr ${gridColsClass(cols)}`
+    const tmpl = `1fr ${gridColsClass(slugs.length)}`
 
-    // Header
     const header = wrap.querySelector('.ratings-header')
     header.style.gridTemplateColumns = tmpl
     header.className = 'ratings-header grid bg-ocean-950 text-white text-xs font-sans font-bold uppercase tracking-wider'
     header.innerHTML = `<div class="px-4 sm:px-5 py-3.5">Category</div>` +
       slugs.map(s => `<div class="py-3.5 text-center truncate px-1 text-ocean-300">${bySlug[s].name.split(' ')[0]}</div>`).join('')
 
-    // Remove existing rows
     wrap.querySelectorAll('.ratings-row').forEach(el => el.remove())
 
-    // Agoda row
-    const agoda = document.createElement('div')
-    agoda.className = 'ratings-row grid border-b border-ocean-50 bg-white'
-    agoda.style.gridTemplateColumns = tmpl
-    agoda.innerHTML = `<div class="px-4 sm:px-5 py-3.5 font-sans text-sm text-ocean-700 font-semibold">Book Online</div>` +
-      slugs.map(s => `<div class="py-3 flex items-center justify-center"><a href="${bySlug[s].agodaLink}" target="_blank" rel="noopener noreferrer sponsored" class="inline-block font-sans text-[11px] font-bold uppercase tracking-wide bg-ocean-900 hover:bg-ocean-950 text-white px-3 py-1.5 rounded transition-colors">Agoda</a></div>`).join('')
-    wrap.appendChild(agoda)
+    const bookRow = document.createElement('div')
+    bookRow.className = 'ratings-row grid border-b border-ocean-50 bg-white'
+    bookRow.style.gridTemplateColumns = tmpl
+    bookRow.innerHTML = `<div class="px-4 sm:px-5 py-3.5 font-sans text-sm text-ocean-700 font-semibold">Book Online</div>` +
+      slugs.map(s => `<div class="py-3 flex items-center justify-center"><a href="${bySlug[s].agodaLink}" target="_blank" rel="noopener noreferrer sponsored" class="inline-block font-sans text-[11px] font-bold uppercase tracking-wide bg-ocean-900 hover:bg-ocean-950 text-white px-3 py-1.5 rounded transition-colors">Book Now</a></div>`).join('')
+    wrap.appendChild(bookRow)
 
-    // Rating rows
     data.ratingRows.forEach((row, i) => {
       const scores = slugs.map(s => bySlug[s].ratings[row.key])
       if (scores.every(v => v === null)) return
       const rowEl = document.createElement('div')
       rowEl.className = `ratings-row grid border-b border-ocean-50 last:border-0 ${i % 2 === 0 ? 'bg-white' : 'bg-ocean-50/40'}`
       rowEl.style.gridTemplateColumns = tmpl
-      const labelBadge = row.key === 'overall'
+      const badge = row.key === 'overall'
         ? '<span class="text-[10px] font-bold uppercase tracking-wider text-ocean-400 bg-ocean-100 px-1.5 py-0.5 rounded">Overall</span>'
         : ''
-      rowEl.innerHTML = `<div class="px-4 sm:px-5 py-3.5 font-sans text-sm text-ocean-700 font-medium flex items-center gap-2">${row.label}${labelBadge}</div>` +
+      rowEl.innerHTML = `<div class="px-4 sm:px-5 py-3.5 font-sans text-sm text-ocean-700 font-medium flex items-center gap-2">${row.label}${badge}</div>` +
         scores.map(v => v !== null
           ? `<div class="py-3.5 flex items-center justify-center"><span class="font-sans text-base font-bold tabular-nums ${scoreColor(v)}">${v}</span></div>`
           : `<div class="py-3.5 flex items-center justify-center"><span class="text-gray-300">—</span></div>`
-        ).join('')
-      wrap.appendChild(rowEl)
-    })
-  }
-
-  function renderAmenitiesTable(slugs) {
-    const wrap = document.getElementById('amenities-table')
-    if (!wrap) return
-    const cols = slugs.length
-    const tmpl = `1fr ${gridColsClass(cols)}`
-    const allAmenities = Array.from(new Set(slugs.flatMap(s => bySlug[s].amenities)))
-
-    const header = wrap.querySelector('.amenities-header')
-    header.style.gridTemplateColumns = tmpl
-    header.className = 'amenities-header grid bg-ocean-950 text-white text-xs font-sans font-bold uppercase tracking-wider'
-    header.innerHTML = `<div class="px-4 sm:px-5 py-3.5">Amenity</div>` +
-      slugs.map(s => `<div class="py-3.5 text-center truncate px-1 text-ocean-300">${bySlug[s].name.split(' ')[0]}</div>`).join('')
-
-    wrap.querySelectorAll('.amenities-row').forEach(el => el.remove())
-
-    allAmenities.forEach((am, i) => {
-      const rowEl = document.createElement('div')
-      rowEl.className = `amenities-row grid border-b border-ocean-50 last:border-0 ${i % 2 === 0 ? 'bg-ocean-50/40' : 'bg-white'}`
-      rowEl.style.gridTemplateColumns = tmpl
-      rowEl.innerHTML = `<div class="px-4 sm:px-5 py-3 font-sans text-sm text-ocean-700">${am}</div>` +
-        slugs.map(s => bySlug[s].amenities.includes(am)
-          ? `<div class="py-3 flex items-center justify-center"><span class="text-emerald-500 text-lg">✓</span></div>`
-          : `<div class="py-3 flex items-center justify-center"><span class="text-gray-300">—</span></div>`
         ).join('')
       wrap.appendChild(rowEl)
     })
@@ -176,13 +136,11 @@
 
     const slugs = [...data.base, ...extras]
 
-    // Noindex the variant — base 2-resort URL stays the canonical indexable page
     const robots = document.createElement('meta')
     robots.name = 'robots'
     robots.content = 'noindex, follow'
     document.head.appendChild(robots)
 
-    // Hide sections that don't make sense with 3+ resorts
     const editorial = document.getElementById('editorial-summary')
     const verdict = document.getElementById('verdict-section')
     if (editorial) editorial.style.display = 'none'
@@ -191,18 +149,16 @@
     renderTitle(slugs)
     renderHeroStrip(slugs)
     renderRatingsTable(slugs)
-    renderAmenitiesTable(slugs)
   }
 
   // ---------- Add resort modal ----------
 
-  const modal = document.getElementById('add-resort-modal')
-  const closeBtn = document.getElementById('add-resort-close')
-  const form = document.getElementById('add-resort-form')
+  const modal     = document.getElementById('add-resort-modal')
+  const closeBtn  = document.getElementById('add-resort-close')
+  const form      = document.getElementById('add-resort-form')
   const countryEl = document.getElementById('add-country')
-  const areaRowEl = document.getElementById('add-area-row')
-  const areaEl = document.getElementById('add-area')
-  const resortEl = document.getElementById('add-resort')
+  const areaEl    = document.getElementById('add-area')
+  const resortEl  = document.getElementById('add-resort')
   const submitBtn = document.getElementById('add-resort-submit')
 
   function currentSlugs() {
@@ -229,21 +185,16 @@
       opt.textContent = c
       countryEl.appendChild(opt)
     })
-    areaRowEl.classList.add('hidden')
+    areaEl.classList.add('hidden')
     areaEl.disabled = true
-    areaEl.innerHTML = '<option value="">Select area</option>'
+    areaEl.innerHTML = '<option value="">Select region / area</option>'
     resortEl.disabled = true
     resortEl.innerHTML = '<option value="">Select resort</option>'
     submitBtn.disabled = true
   }
 
-  function openModal() {
-    populateCountries()
-    modal.classList.remove('hidden')
-  }
-  function closeModal() {
-    modal.classList.add('hidden')
-  }
+  function openModal() { populateCountries(); modal.classList.remove('hidden') }
+  function closeModal() { modal.classList.add('hidden') }
 
   document.addEventListener('click', e => {
     if (e.target.id === 'add-resort-slot' || e.target.closest('#add-resort-slot')) openModal()
@@ -253,24 +204,21 @@
 
   countryEl.addEventListener('change', () => {
     const h = buildHierarchy(currentSlugs())
-    areaEl.innerHTML = '<option value="">Select area</option>'
+    areaEl.innerHTML = '<option value="">Select region / area</option>'
     resortEl.innerHTML = '<option value="">Select resort</option>'
     resortEl.disabled = true
     submitBtn.disabled = true
 
     const areas = h[countryEl.value]
-    if (!areas) {
-      areaRowEl.classList.add('hidden')
-      areaEl.disabled = true
-      return
-    }
+    if (!areas) { areaEl.classList.add('hidden'); areaEl.disabled = true; return }
+
     const areaKeys = Object.keys(areas)
     if (areaKeys.length === 1) {
-      areaRowEl.classList.add('hidden')
+      areaEl.classList.add('hidden')
       areaEl.value = areaKeys[0]
       populateResortOptions(areas[areaKeys[0]])
     } else {
-      areaRowEl.classList.remove('hidden')
+      areaEl.classList.remove('hidden')
       areaKeys.forEach(a => {
         const opt = document.createElement('option')
         opt.value = a
@@ -300,17 +248,13 @@
     submitBtn.disabled = true
   })
 
-  resortEl.addEventListener('change', () => {
-    submitBtn.disabled = !resortEl.value
-  })
+  resortEl.addEventListener('change', () => { submitBtn.disabled = !resortEl.value })
 
   form.addEventListener('submit', e => {
     e.preventDefault()
     if (!resortEl.value) return
-    const extras = [...getExtras(), resortEl.value]
-    setExtras(extras)
+    setExtras([...getExtras(), resortEl.value])
   })
 
-  // ---------- Initialize ----------
   applyExtras()
 })()

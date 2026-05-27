@@ -15,7 +15,6 @@ const ratingRows = [
   { key: 'service',      label: 'Service' },
   { key: 'sleepQuality', label: 'Sleep Quality' },
 ]
-const allAmenities = Array.from(new Set([...a.amenities, ...b.amenities]))
 %>
 
 <script type="application/ld+json">
@@ -38,14 +37,19 @@ const allAmenities = Array.from(new Set([...a.amenities, ...b.amenities]))
       <%= b.name %>
     </h1>
 
-    <div id="hero-strip" class="grid grid-cols-2 sm:grid-cols-3 gap-3" data-base-cols="2">
+    <div id="hero-strip" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
       <% [a, b].forEach((r, idx) => { %>
-        <div class="rounded-2xl p-4 sm:p-5 text-center border bg-white/5 border-white/10 relative" data-slot-card="<%= idx %>" data-slug="<%= r.slug %>">
+        <div class="rounded-2xl p-4 sm:p-5 border bg-white/5 border-white/10" data-slug="<%= r.slug %>">
           <a href="/resorts/<%= r.slug %>/" class="font-serif text-base sm:text-lg font-bold text-white hover:text-gold-300 transition-colors block leading-snug mb-1"><%= r.name %></a>
           <p class="font-sans text-xs text-ocean-400 mb-3"><%= r.country %> · <%= r.type === 'adults-only' ? 'Adults Only' : 'Family' %></p>
           <div class="font-serif text-4xl font-bold tabular-nums <%= scoreColor(r.ratings.overall) %>"><%= r.ratings.overall %></div>
-          <div class="font-sans text-xs text-ocean-400 mt-0.5"><%= scoreLabel(r.ratings.overall) %></div>
-          <a href="<%= r.agodaLink %>" target="_blank" rel="noopener noreferrer sponsored" class="mt-4 block font-sans text-sm font-semibold rounded-xl py-2.5 transition-colors bg-gold-500 hover:bg-gold-600 text-white">Book on Agoda →</a>
+          <div class="font-sans text-xs text-ocean-400 mt-0.5 mb-4"><%= scoreLabel(r.ratings.overall) %></div>
+          <div class="flex flex-wrap gap-1 mb-4">
+            <% r.amenities.forEach(am => { %>
+              <span class="font-sans text-[10px] bg-white/10 text-ocean-200 px-2 py-0.5 rounded-full leading-tight"><%= am %></span>
+            <% }) %>
+          </div>
+          <a href="<%= r.agodaLink %>" target="_blank" rel="noopener noreferrer sponsored" class="block font-sans text-sm font-semibold rounded-xl py-2.5 transition-colors text-center bg-gold-500 hover:bg-gold-600 text-white">Check Prices →</a>
         </div>
       <% }) %>
       <!-- Empty "Add Resort" slot -->
@@ -72,21 +76,21 @@ const allAmenities = Array.from(new Set([...a.amenities, ...b.amenities]))
   </div>
 
   <!-- Ratings table -->
-  <div id="ratings-table" class="bg-white rounded-2xl shadow-card overflow-hidden mb-6 border border-ocean-100" data-base-cols="2">
+  <div id="ratings-table" class="bg-white rounded-2xl shadow-card overflow-hidden mb-6 border border-ocean-100">
     <div class="ratings-header grid grid-cols-[1fr_80px_80px] sm:grid-cols-[1fr_100px_100px] bg-ocean-950 text-white text-xs font-sans font-bold uppercase tracking-wider">
       <div class="px-4 sm:px-5 py-3.5">Category</div>
       <div class="py-3.5 text-center truncate px-1 text-ocean-300"><%= a.name.split(' ')[0] %></div>
       <div class="py-3.5 text-center truncate px-1 text-ocean-300"><%= b.name.split(' ')[0] %></div>
     </div>
 
-    <!-- Agoda booking row -->
+    <!-- Booking row -->
     <div class="ratings-row grid grid-cols-[1fr_80px_80px] sm:grid-cols-[1fr_100px_100px] border-b border-ocean-50 bg-white">
       <div class="px-4 sm:px-5 py-3.5 font-sans text-sm text-ocean-700 font-semibold">Book Online</div>
       <div class="py-3 flex items-center justify-center">
-        <a href="<%= a.agodaLink %>" target="_blank" rel="noopener noreferrer sponsored" class="inline-block font-sans text-[11px] font-bold uppercase tracking-wide bg-ocean-900 hover:bg-ocean-950 text-white px-3 py-1.5 rounded transition-colors">Agoda</a>
+        <a href="<%= a.agodaLink %>" target="_blank" rel="noopener noreferrer sponsored" class="inline-block font-sans text-[11px] font-bold uppercase tracking-wide bg-ocean-900 hover:bg-ocean-950 text-white px-3 py-1.5 rounded transition-colors">Book Now</a>
       </div>
       <div class="py-3 flex items-center justify-center">
-        <a href="<%= b.agodaLink %>" target="_blank" rel="noopener noreferrer sponsored" class="inline-block font-sans text-[11px] font-bold uppercase tracking-wide bg-ocean-900 hover:bg-ocean-950 text-white px-3 py-1.5 rounded transition-colors">Agoda</a>
+        <a href="<%= b.agodaLink %>" target="_blank" rel="noopener noreferrer sponsored" class="inline-block font-sans text-[11px] font-bold uppercase tracking-wide bg-ocean-900 hover:bg-ocean-950 text-white px-3 py-1.5 rounded transition-colors">Book Now</a>
       </div>
     </div>
 
@@ -120,26 +124,6 @@ const allAmenities = Array.from(new Set([...a.amenities, ...b.amenities]))
     <% }) %>
   </div>
 
-  <!-- Amenities -->
-  <div id="amenities-table" class="bg-white rounded-2xl shadow-card overflow-hidden mb-6 border border-ocean-100" data-base-cols="2">
-    <div class="amenities-header grid grid-cols-[1fr_80px_80px] sm:grid-cols-[1fr_100px_100px] bg-ocean-950 text-white text-xs font-sans font-bold uppercase tracking-wider">
-      <div class="px-4 sm:px-5 py-3.5">Amenity</div>
-      <div class="py-3.5 text-center truncate px-1 text-ocean-300"><%= a.name.split(' ')[0] %></div>
-      <div class="py-3.5 text-center truncate px-1 text-ocean-300"><%= b.name.split(' ')[0] %></div>
-    </div>
-    <% allAmenities.forEach((am, i) => { %>
-      <div class="amenities-row grid grid-cols-[1fr_80px_80px] sm:grid-cols-[1fr_100px_100px] border-b border-ocean-50 last:border-0 <%= i % 2 === 0 ? 'bg-ocean-50/40' : 'bg-white' %>">
-        <div class="px-4 sm:px-5 py-3 font-sans text-sm text-ocean-700"><%= am %></div>
-        <div class="py-3 flex items-center justify-center">
-          <%- a.amenities.includes(am) ? '<span class="text-emerald-500 text-lg">✓</span>' : '<span class="text-gray-300">—</span>' %>
-        </div>
-        <div class="py-3 flex items-center justify-center">
-          <%- b.amenities.includes(am) ? '<span class="text-emerald-500 text-lg">✓</span>' : '<span class="text-gray-300">—</span>' %>
-        </div>
-      </div>
-    <% }) %>
-  </div>
-
   <!-- Verdict (hidden when 3+ resorts) -->
   <div id="verdict-section" class="bg-ocean-950 rounded-2xl p-6 sm:p-8 mb-6">
     <p class="font-sans text-xs font-bold uppercase tracking-widest text-ocean-500 mb-1">Our Verdict</p>
@@ -155,8 +139,8 @@ const allAmenities = Array.from(new Set([...a.amenities, ...b.amenities]))
       <% } %>
     </p>
     <div class="mt-5 flex flex-col sm:flex-row gap-3">
-      <a href="<%= winner.agodaLink %>" target="_blank" rel="noopener noreferrer sponsored" class="flex-1 text-center font-sans text-sm font-bold bg-gold-500 hover:bg-gold-600 text-white rounded-xl py-3 transition-colors">Book <%= winner.name.split(' ').slice(0, 2).join(' ') %> on Agoda →</a>
-      <a href="<%= loser.agodaLink %>" target="_blank" rel="noopener noreferrer sponsored" class="flex-1 text-center font-sans text-sm font-semibold bg-white/10 hover:bg-white/20 text-white rounded-xl py-3 transition-colors">Book <%= loser.name.split(' ').slice(0, 2).join(' ') %> on Agoda →</a>
+      <a href="<%= winner.agodaLink %>" target="_blank" rel="noopener noreferrer sponsored" class="flex-1 text-center font-sans text-sm font-bold bg-gold-500 hover:bg-gold-600 text-white rounded-xl py-3 transition-colors">Check Prices — <%= winner.name.split(' ').slice(0, 2).join(' ') %> →</a>
+      <a href="<%= loser.agodaLink %>" target="_blank" rel="noopener noreferrer sponsored" class="flex-1 text-center font-sans text-sm font-semibold bg-white/10 hover:bg-white/20 text-white rounded-xl py-3 transition-colors">Check Prices — <%= loser.name.split(' ').slice(0, 2).join(' ') %> →</a>
     </div>
   </div>
 
@@ -173,7 +157,7 @@ const allAmenities = Array.from(new Set([...a.amenities, ...b.amenities]))
 
 </div>
 
-<!-- Add Resort modal (hidden by default) -->
+<!-- Add Resort modal -->
 <div id="add-resort-modal" class="hidden fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
   <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl">
     <div class="flex items-center justify-between px-5 py-4 border-b border-ocean-100">
@@ -181,24 +165,15 @@ const allAmenities = Array.from(new Set([...a.amenities, ...b.amenities]))
       <button type="button" id="add-resort-close" class="text-ocean-400 hover:text-ocean-900 text-xl leading-none">×</button>
     </div>
     <form id="add-resort-form" class="p-5 space-y-3">
-      <div>
-        <label for="add-country" class="block font-sans text-xs text-ocean-400 mb-1">Country</label>
-        <select id="add-country" class="w-full font-sans text-sm bg-white border border-ocean-200 text-ocean-900 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ocean-500">
-          <option value="">Select country</option>
-        </select>
-      </div>
-      <div id="add-area-row" class="hidden">
-        <label for="add-area" class="block font-sans text-xs text-ocean-400 mb-1">Area</label>
-        <select id="add-area" disabled class="w-full font-sans text-sm bg-white border border-ocean-200 text-ocean-900 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ocean-500 disabled:opacity-40">
-          <option value="">Select area</option>
-        </select>
-      </div>
-      <div>
-        <label for="add-resort" class="block font-sans text-xs text-ocean-400 mb-1">Resort</label>
-        <select id="add-resort" disabled class="w-full font-sans text-sm bg-white border border-ocean-200 text-ocean-900 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ocean-500 disabled:opacity-40">
-          <option value="">Select resort</option>
-        </select>
-      </div>
+      <select id="add-country" class="w-full font-sans text-sm bg-white border border-ocean-200 text-ocean-900 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ocean-500">
+        <option value="">Select country</option>
+      </select>
+      <select id="add-area" disabled class="w-full font-sans text-sm bg-white border border-ocean-200 text-ocean-900 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ocean-500 disabled:opacity-40 hidden">
+        <option value="">Select region / area</option>
+      </select>
+      <select id="add-resort" disabled class="w-full font-sans text-sm bg-white border border-ocean-200 text-ocean-900 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ocean-500 disabled:opacity-40">
+        <option value="">Select resort</option>
+      </select>
       <button type="submit" id="add-resort-submit" disabled class="w-full font-sans text-sm font-bold bg-ocean-900 hover:bg-ocean-950 disabled:bg-ocean-300 text-white rounded-xl py-3 transition-colors">Add to Comparison</button>
     </form>
   </div>
