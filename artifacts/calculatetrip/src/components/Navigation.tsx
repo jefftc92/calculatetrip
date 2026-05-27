@@ -30,6 +30,12 @@ export default function Navigation() {
               {link.label}
             </Link>
           ))}
+          <Link
+            href="/compare"
+            className="font-sans text-sm font-bold px-4 py-1.5 rounded-lg bg-gold-500 hover:bg-gold-600 text-white transition-all ml-1"
+          >
+            Compare Resorts
+          </Link>
         </div>
 
         {/* Mobile hamburger */}
