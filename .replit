@@ -1,0 +1,14 @@
+modules = ["nodejs-24"]
+[agent]
+expertMode = true
+
+[[ports]]
+localPort = 24605
+externalPort = 80
+
+[workflows]
+runButton = "Project"
+
+[deployment]
+run = ["sh", "-c", "echo static"]
+build = ["pnpm", "--filter", "@workspace/calculatetrip", "run", "build"]
