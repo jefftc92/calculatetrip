@@ -4,6 +4,7 @@ import Footer from './components/Footer'
 import HomePage from './pages/HomePage'
 import AllResortsPage from './pages/AllResortsPage'
 import ResortDetailPage from './pages/ResortDetailPage'
+import CompareHubPage from './pages/CompareHubPage'
 import ComparePage from './pages/ComparePage'
 import DestinationPage from './pages/DestinationPage'
 import AdultsOnlyPage from './pages/AdultsOnlyPage'
@@ -31,6 +32,7 @@ function Router() {
           <Route path="/" component={HomePage} />
           <Route path="/resorts" component={AllResortsPage} />
           <Route path="/resorts/:slug" component={ResortDetailPage} />
+          <Route path="/compare" component={CompareHubPage} />
           <Route path="/compare/:pair" component={ComparePage} />
           <Route path="/destination/:country" component={DestinationPage} />
           <Route path="/best-adults-only-all-inclusive-resorts" component={AdultsOnlyPage} />
