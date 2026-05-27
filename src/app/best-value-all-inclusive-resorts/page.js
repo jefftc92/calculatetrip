@@ -1,0 +1,41 @@
+import ResortCard from '@/components/ResortCard'
+import Breadcrumb from '@/components/Breadcrumb'
+import { resorts } from '@/data/resorts'
+import { SITE_URL } from '@/lib/utils'
+
+export const metadata = {
+  title: 'Best Value All-Inclusive Resorts 2025 | Top Rated for Money',
+  description: 'All-inclusive resorts with the highest value-for-money ratings. Independent scores across food, beach, pool, rooms, and service — so you know exactly what you get.',
+  alternates: { canonical: `${SITE_URL}/best-value-all-inclusive-resorts/` },
+  openGraph: {
+    title: 'Best Value All-Inclusive Resorts 2025 | Top Rated for Money',
+    description: 'The best value all-inclusive resorts ranked by independent value ratings.',
+    url: `${SITE_URL}/best-value-all-inclusive-resorts/`,
+  },
+}
+
+const sorted = [...resorts].sort((a, b) => b.ratings.value - a.ratings.value)
+
+export default function BestValuePage() {
+  return (
+    <div className="max-w-6xl mx-auto px-4 py-10">
+      <Breadcrumb crumbs={[{ label: 'Home', href: '/' }, { label: 'Best Value Resorts' }]} />
+
+      <h1 className="text-3xl font-extrabold text-gray-900 mb-2">
+        Best Value All-Inclusive Resorts 2025
+      </h1>
+      <p className="text-gray-500 mb-4 max-w-2xl">
+        Ranked by independent value-for-money score. These resorts deliver exceptional quality without the luxury markup.
+      </p>
+      <div className="bg-sand-50 border border-sand-100 rounded-xl px-5 py-4 mb-10 text-sm text-yellow-800 bg-yellow-50 border-yellow-100">
+        <strong>How we score value:</strong> Value ratings reflect the balance between overall quality — food, rooms, service, amenities — and price. A high value score means guests consistently feel they got more than they paid for.
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {sorted.map((r, i) => (
+          <ResortCard key={r.slug} resort={r} rank={i + 1} />
+        ))}
+      </div>
+    </div>
+  )
+}

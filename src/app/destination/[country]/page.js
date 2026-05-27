@@ -1,0 +1,66 @@
+import { notFound } from 'next/navigation'
+import ResortCard from '@/components/ResortCard'
+import Breadcrumb from '@/components/Breadcrumb'
+import { getAllCountries, getResortsByCountry } from '@/data/resorts'
+import { SITE_URL, countryFromSlug } from '@/lib/utils'
+
+export async function generateStaticParams() {
+  return getAllCountries().map((c) => ({ country: c.slug }))
+}
+
+export async function generateMetadata({ params }) {
+  const country = countryFromSlug(params.country)
+  const resorts = getResortsByCountry(params.country)
+  if (!resorts.length) return {}
+  const title = `Best All-Inclusive Resorts in ${country} 2025 | Rated & Reviewed`
+  const description = `The ${resorts.length} best all-inclusive resort${resorts.length !== 1 ? 's' : ''} in ${country}, independently rated across food, beach, pool, service, and value.`
+  return {
+    title,
+    description,
+    alternates: { canonical: `${SITE_URL}/destination/${params.country}/` },
+    openGraph: { title, description, url: `${SITE_URL}/destination/${params.country}/` },
+  }
+}
+
+export default function CountryPage({ params }) {
+  const countrySlug = params.country
+  const countryName = countryFromSlug(countrySlug)
+  const resorts = getResortsByCountry(countrySlug).sort((a, b) => b.ratings.overall - a.ratings.overall)
+
+  if (!resorts.length) notFound()
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: `Best All-Inclusive Resorts in ${countryName} 2025`,
+    url: `${SITE_URL}/destination/${countrySlug}/`,
+    numberOfItems: resorts.length,
+  }
+
+  return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+
+      <div className="max-w-6xl mx-auto px-4 py-10">
+        <Breadcrumb crumbs={[
+          { label: 'Home', href: '/' },
+          { label: 'Destinations', href: '/resorts/' },
+          { label: countryName },
+        ]} />
+
+        <h1 className="text-3xl font-extrabold text-gray-900 mb-2">
+          Best All-Inclusive Resorts in {countryName} 2025
+        </h1>
+        <p className="text-gray-500 mb-10 max-w-2xl">
+          {resorts.length} all-inclusive {resorts.length === 1 ? 'resort' : 'resorts'} in {countryName}, independently rated across food, beach, pool, service, and value.
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {resorts.map((r, i) => (
+            <ResortCard key={r.slug} resort={r} rank={i + 1} />
+          ))}
+        </div>
+      </div>
+    </>
+  )
+}
