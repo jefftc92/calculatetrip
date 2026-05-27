@@ -233,3 +233,13 @@ export function getResortsByType(type: ResortType): Resort[] {
 export const countries = [...new Set(resorts.map((r) => ({ name: r.country, slug: r.countrySlug })))].filter(
   (c, i, arr) => arr.findIndex((x) => x.slug === c.slug) === i
 )
+
+export function getAllComparisonPairs(): { a: Resort; b: Resort }[] {
+  const pairs: { a: Resort; b: Resort }[] = []
+  for (let i = 0; i < resorts.length; i++) {
+    for (let j = i + 1; j < resorts.length; j++) {
+      pairs.push({ a: resorts[i], b: resorts[j] })
+    }
+  }
+  return pairs
+}
