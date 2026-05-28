@@ -122,49 +122,39 @@ const ratingRows = [
   <% if (overview) { %>
   <div id="overview-section" class="two-resort-only space-y-6 mb-6">
 
+    <%- /* ── Key Differences (full-width, applies to comparison as a whole) ── */ '' %>
     <div class="bg-white border border-ocean-100 rounded-2xl shadow-card p-6 sm:p-8">
-      <p class="font-sans text-xs font-bold uppercase tracking-widest text-ocean-500 mb-1">Editorial Overview</p>
+      <p class="font-sans text-xs font-bold uppercase tracking-widest text-ocean-500 mb-2">Editorial Overview</p>
       <h2 class="font-serif text-2xl font-bold text-ocean-950 mb-4">Key Differences</h2>
-      <p class="font-sans text-sm text-ocean-700 leading-relaxed mb-8"><%= overview.keyDifferences %></p>
+      <p class="font-sans text-base text-ocean-700 leading-relaxed"><%= overview.keyDifferences %></p>
+    </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-        <div class="rounded-xl bg-ocean-50 border border-ocean-100 p-4">
-          <p class="font-sans text-xs font-bold uppercase tracking-widest text-ocean-500 mb-1">Choose <%= a.name.split(' ')[0] %> if…</p>
-          <p class="font-sans text-sm text-ocean-700 leading-relaxed"><%= overview.whoShouldChooseA %></p>
-        </div>
-        <div class="rounded-xl bg-ocean-50 border border-ocean-100 p-4">
-          <p class="font-sans text-xs font-bold uppercase tracking-widest text-ocean-500 mb-1">Choose <%= b.name.split(' ')[0] %> if…</p>
-          <p class="font-sans text-sm text-ocean-700 leading-relaxed"><%= overview.whoShouldChooseB %></p>
-        </div>
+    <%- /* ── Practical info (full-width sections that apply to both resorts together) ── */ '' %>
+    <div class="bg-white border border-ocean-100 rounded-2xl shadow-card divide-y divide-ocean-100">
+      <div class="p-6 sm:p-8">
+        <p class="font-sans text-xs font-bold uppercase tracking-widest text-ocean-500 mb-2">When to Visit</p>
+        <p class="font-sans text-sm text-ocean-700 leading-relaxed"><%= overview.whenToVisit %></p>
       </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 border-t border-ocean-100 pt-6">
-        <div>
-          <p class="font-sans text-xs font-bold uppercase tracking-widest text-ocean-500 mb-2">When to Visit</p>
-          <p class="font-sans text-sm text-ocean-700 leading-relaxed"><%= overview.whenToVisit %></p>
-        </div>
-        <div>
-          <p class="font-sans text-xs font-bold uppercase tracking-widest text-ocean-500 mb-2">Activities</p>
-          <p class="font-sans text-sm text-ocean-700 leading-relaxed"><%= overview.activities %></p>
-        </div>
-      </div>
-
-      <div class="mt-6 flex flex-col sm:flex-row gap-3 border-t border-ocean-100 pt-6">
-        <a href="<%= winner.agodaLink %>" target="_blank" rel="noopener noreferrer sponsored" class="flex-1 text-center font-sans text-sm font-bold bg-gold-500 hover:bg-gold-600 text-white rounded-xl py-3 transition-colors">Check Prices — <%= winner.name.split(' ').slice(0,2).join(' ') %> →</a>
-        <a href="<%= loser.agodaLink %>" target="_blank" rel="noopener noreferrer sponsored" class="flex-1 text-center font-sans text-sm font-semibold bg-ocean-100 hover:bg-ocean-200 text-ocean-900 rounded-xl py-3 transition-colors">Check Prices — <%= loser.name.split(' ').slice(0,2).join(' ') %> →</a>
+      <div class="p-6 sm:p-8">
+        <p class="font-sans text-xs font-bold uppercase tracking-widest text-ocean-500 mb-2">Activities</p>
+        <p class="font-sans text-sm text-ocean-700 leading-relaxed"><%= overview.activities %></p>
       </div>
     </div>
 
-    <%- /* ── What You Need to Know ── */ '' %>
+    <%- /* ── What You Need to Know (side-by-side per-resort comparison) ── */ '' %>
     <div>
       <h2 class="font-serif text-xl font-bold text-ocean-950 mb-4">What You Need to Know</h2>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <% [a, b].forEach(r => { %>
-          <div class="bg-white border border-ocean-100 rounded-2xl shadow-card p-5 sm:p-6">
-            <p class="font-sans text-xs font-bold uppercase tracking-widest text-ocean-500 mb-1"><%= r.country %> · <%= r.type === 'adults-only' ? 'Adults Only' : 'Family' %></p>
+        <% [a, b].forEach((r, i) => { %>
+          <div class="bg-white border border-ocean-100 rounded-2xl shadow-card p-5 sm:p-6 flex flex-col">
+            <p class="font-sans text-[10px] font-bold uppercase tracking-widest text-ocean-400 mb-1"><%= i === 0 ? 'Resort A' : 'Resort B' %> · <%= r.country %> · <%= r.type === 'adults-only' ? 'Adults Only' : 'Family' %></p>
             <h3 class="font-serif text-lg font-bold text-ocean-950 mb-3"><%= r.name %></h3>
-            <p class="font-sans text-sm text-ocean-700 leading-relaxed"><%= r.whatYouNeedToKnow %></p>
-            <a href="<%= r.agodaLink %>" target="_blank" rel="noopener noreferrer sponsored" class="mt-4 inline-block font-sans text-sm font-semibold text-ocean-600 hover:text-ocean-900 transition-colors">Check Prices →</a>
+            <div class="rounded-lg bg-ocean-50 border border-ocean-100 p-3 mb-4">
+              <p class="font-sans text-[11px] font-bold uppercase tracking-widest text-ocean-500 mb-1">Choose if…</p>
+              <p class="font-sans text-sm text-ocean-700 leading-relaxed"><%= i === 0 ? overview.whoShouldChooseA : overview.whoShouldChooseB %></p>
+            </div>
+            <p class="font-sans text-sm text-ocean-700 leading-relaxed flex-1"><%= r.whatYouNeedToKnow %></p>
+            <a href="<%= r.agodaLink %>" target="_blank" rel="noopener noreferrer sponsored" class="mt-5 block text-center font-sans text-sm font-bold <%= i === 0 ? 'bg-gold-500 hover:bg-gold-600 text-white' : 'bg-ocean-900 hover:bg-ocean-950 text-white' %> rounded-xl py-3 transition-colors">Check Prices — <%= r.name.split(' ').slice(0,2).join(' ') %> →</a>
           </div>
         <% }) %>
       </div>
