@@ -141,10 +141,7 @@
     robots.content = 'noindex, follow'
     document.head.appendChild(robots)
 
-    const editorial = document.getElementById('editorial-summary')
-    const verdict = document.getElementById('verdict-section')
-    if (editorial) editorial.style.display = 'none'
-    if (verdict) verdict.style.display = 'none'
+    document.querySelectorAll('.two-resort-only').forEach(el => { el.style.display = 'none' })
 
     renderTitle(slugs)
     renderHeroStrip(slugs)
