@@ -42,7 +42,7 @@
   }
 
   function gridColsClass(n) {
-    return `repeat(${n}, minmax(70px, 90px))`
+    return `repeat(${n}, minmax(110px, 140px))`
   }
 
   function renderHeroStrip(slugs) {
@@ -93,7 +93,7 @@
     header.style.gridTemplateColumns = tmpl
     header.className = 'ratings-header grid bg-ocean-950 text-white text-xs font-sans font-bold uppercase tracking-wider'
     header.innerHTML = `<div class="px-4 sm:px-5 py-3.5">Category</div>` +
-      slugs.map(s => `<div class="py-3.5 text-center truncate px-1 text-ocean-300">${bySlug[s].name.split(' ')[0]}</div>`).join('')
+      slugs.map(s => `<div class="py-3.5 text-center px-2 text-ocean-300 leading-tight">${bySlug[s].name}</div>`).join('')
 
     wrap.querySelectorAll('.ratings-row').forEach(el => el.remove())
 

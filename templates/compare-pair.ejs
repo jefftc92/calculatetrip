@@ -67,13 +67,13 @@ const ratingRows = [
 
   <%- /* ───── RATINGS TABLE ───── */ '' %>
   <div id="ratings-table" class="bg-white rounded-2xl shadow-card overflow-hidden mb-6 border border-ocean-100">
-    <div class="ratings-header grid grid-cols-[1fr_80px_80px] sm:grid-cols-[1fr_100px_100px] bg-ocean-950 text-white text-xs font-sans font-bold uppercase tracking-wider">
+    <div class="ratings-header grid grid-cols-[1fr_110px_110px] sm:grid-cols-[1fr_140px_140px] bg-ocean-950 text-white text-xs font-sans font-bold uppercase tracking-wider">
       <div class="px-4 sm:px-5 py-3.5">Category</div>
-      <div class="py-3.5 text-center truncate px-1 text-ocean-300"><%= a.name.split(' ')[0] %></div>
-      <div class="py-3.5 text-center truncate px-1 text-ocean-300"><%= b.name.split(' ')[0] %></div>
+      <div class="py-3.5 text-center px-2 text-ocean-300 leading-tight"><%= a.name %></div>
+      <div class="py-3.5 text-center px-2 text-ocean-300 leading-tight"><%= b.name %></div>
     </div>
 
-    <div class="ratings-row grid grid-cols-[1fr_80px_80px] sm:grid-cols-[1fr_100px_100px] border-b border-ocean-50 bg-white">
+    <div class="ratings-row grid grid-cols-[1fr_110px_110px] sm:grid-cols-[1fr_140px_140px] border-b border-ocean-50 bg-white">
       <div class="px-4 sm:px-5 py-3.5 font-sans text-sm text-ocean-700 font-semibold">Book Online</div>
       <div class="py-3 flex items-center justify-center">
         <a href="<%= a.agodaLink %>" target="_blank" rel="noopener noreferrer sponsored" class="inline-block font-sans text-[11px] font-bold uppercase tracking-wide bg-ocean-900 hover:bg-ocean-950 text-white px-3 py-1.5 rounded transition-colors">Book Now</a>
@@ -89,7 +89,7 @@ const ratingRows = [
       if (sA === null && sB === null) return
       const tip = RATING_TOOLTIPS[row.key] || ''
     %>
-      <div class="ratings-row grid grid-cols-[1fr_80px_80px] sm:grid-cols-[1fr_100px_100px] border-b border-ocean-50 last:border-0 <%= i % 2 === 0 ? 'bg-white' : 'bg-ocean-50/40' %>">
+      <div class="ratings-row grid grid-cols-[1fr_110px_110px] sm:grid-cols-[1fr_140px_140px] border-b border-ocean-50 last:border-0 <%= i % 2 === 0 ? 'bg-white' : 'bg-ocean-50/40' %>">
         <div class="px-4 sm:px-5 py-3.5 font-sans text-sm text-ocean-700 font-medium flex items-center gap-1.5">
           <%= row.label %>
           <% if (row.key === 'overall') { %>
