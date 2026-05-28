@@ -153,31 +153,26 @@
       </div>
     `
 
-    // When to Visit — group by country
-    const byCountry = {}
-    slugs.forEach(s => {
+    // Per-resort grid sizing
+    const perResortGridCols = slugs.length === 2 ? 'sm:grid-cols-2' : slugs.length === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2 lg:grid-cols-4'
+
+    // When to Visit — one card per resort (repeat country text is fine in boilerplate)
+    const whenCardsHtml = slugs.map(s => {
       const r = bySlug[s]
-      if (!byCountry[r.country]) byCountry[r.country] = { country: r.country, bestTimeToVisit: r.bestTimeToVisit, resorts: [] }
-      byCountry[r.country].resorts.push(r)
-    })
-    const countryEntries = Object.values(byCountry)
-    const whenCardsHtml = countryEntries.map(entry => `
-      <div class="bg-white border border-ocean-100 rounded-2xl shadow-card p-5 sm:p-6">
-        <p class="font-sans text-[10px] font-bold uppercase tracking-widest text-ocean-400 mb-1">${escapeHtml(entry.country)}</p>
-        <h3 class="font-serif text-base font-bold text-ocean-950 mb-3">${entry.resorts.map(r => escapeHtml(r.name)).join(' · ')}</h3>
-        <p class="font-sans text-sm text-ocean-700 leading-relaxed">${escapeHtml(entry.bestTimeToVisit)}</p>
-      </div>
-    `).join('')
-    const whenGridCols = countryEntries.length === 1 ? '' : countryEntries.length === 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-2 lg:grid-cols-3'
+      return `
+        <div class="bg-white border border-ocean-100 rounded-2xl shadow-card p-5 sm:p-6">
+          <p class="font-sans text-[10px] font-bold uppercase tracking-widest text-ocean-400 mb-1">${escapeHtml(r.country)}</p>
+          <h3 class="font-serif text-base font-bold text-ocean-950 mb-3">${escapeHtml(r.name)}</h3>
+          <p class="font-sans text-sm text-ocean-700 leading-relaxed">${escapeHtml(r.bestTimeToVisit)}</p>
+        </div>
+      `
+    }).join('')
     const whenHtml = `
       <div>
         <h2 class="font-serif text-xl font-bold text-ocean-950 mb-4">When to Visit</h2>
-        <div class="grid grid-cols-1 ${whenGridCols} gap-4">${whenCardsHtml}</div>
+        <div class="grid grid-cols-1 ${perResortGridCols} gap-4">${whenCardsHtml}</div>
       </div>
     `
-
-    // Activities — per resort
-    const perResortGridCols = slugs.length === 2 ? 'sm:grid-cols-2' : slugs.length === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2 lg:grid-cols-4'
     const activitiesCardsHtml = slugs.map(s => {
       const r = bySlug[s]
       return `
