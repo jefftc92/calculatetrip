@@ -139,20 +139,6 @@
     if (!wrap) return
     wrap.classList.remove('hidden')
 
-    const adultsOnly = slugs.filter(s => bySlug[s].type === 'adults-only').length
-    const family = slugs.length - adultsOnly
-    const countries = [...new Set(slugs.map(s => bySlug[s].country))]
-    const audience = adultsOnly === slugs.length ? 'adults-only' : family === slugs.length ? 'family-friendly' : 'mixed adults-only and family'
-    const countryList = countries.length === 1 ? countries[0] : countries.slice(0, -1).join(', ') + ' and ' + countries.slice(-1)
-
-    const keyDifferencesHtml = `
-      <div class="bg-white border border-ocean-100 rounded-2xl shadow-card p-6 sm:p-8">
-        <p class="font-sans text-xs font-bold uppercase tracking-widest text-ocean-500 mb-2">Editorial Overview</p>
-        <h2 class="font-serif text-2xl font-bold text-ocean-950 mb-4">Comparing ${slugs.length} Resorts</h2>
-        <p class="font-sans text-base text-ocean-700 leading-relaxed">You're comparing ${slugs.length} ${audience} all-inclusive resorts across ${countryList}. Use the side-by-side scores above to weigh the categories that matter most to you — food, beach, value, or service — then read each resort's overview below. Each property has different strengths, locations, and best travel seasons, so the right choice depends on your group's priorities and travel dates.</p>
-      </div>
-    `
-
     // Per-resort grid sizing
     const perResortGridCols = slugs.length === 2 ? 'sm:grid-cols-2' : slugs.length === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2 lg:grid-cols-4'
 
@@ -208,7 +194,7 @@
       </div>
     `
 
-    wrap.innerHTML = keyDifferencesHtml + whenHtml + activitiesHtml + wyntkHtml
+    wrap.innerHTML = whenHtml + activitiesHtml + wyntkHtml
   }
 
   function applyExtras() {
