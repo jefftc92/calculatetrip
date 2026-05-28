@@ -130,6 +130,92 @@
     ).join('')
   }
 
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+  }
+
+  function renderMultiOverview(slugs) {
+    const wrap = document.getElementById('overview-multi')
+    if (!wrap) return
+    wrap.classList.remove('hidden')
+
+    const adultsOnly = slugs.filter(s => bySlug[s].type === 'adults-only').length
+    const family = slugs.length - adultsOnly
+    const countries = [...new Set(slugs.map(s => bySlug[s].country))]
+    const audience = adultsOnly === slugs.length ? 'adults-only' : family === slugs.length ? 'family-friendly' : 'mixed adults-only and family'
+    const countryList = countries.length === 1 ? countries[0] : countries.slice(0, -1).join(', ') + ' and ' + countries.slice(-1)
+
+    const keyDifferencesHtml = `
+      <div class="bg-white border border-ocean-100 rounded-2xl shadow-card p-6 sm:p-8">
+        <p class="font-sans text-xs font-bold uppercase tracking-widest text-ocean-500 mb-2">Editorial Overview</p>
+        <h2 class="font-serif text-2xl font-bold text-ocean-950 mb-4">Comparing ${slugs.length} Resorts</h2>
+        <p class="font-sans text-base text-ocean-700 leading-relaxed">You're comparing ${slugs.length} ${audience} all-inclusive resorts across ${countryList}. Use the side-by-side scores above to weigh the categories that matter most to you — food, beach, value, or service — then read each resort's overview below. Each property has different strengths, locations, and best travel seasons, so the right choice depends on your group's priorities and travel dates.</p>
+      </div>
+    `
+
+    // When to Visit — group by country
+    const byCountry = {}
+    slugs.forEach(s => {
+      const r = bySlug[s]
+      if (!byCountry[r.country]) byCountry[r.country] = { country: r.country, bestTimeToVisit: r.bestTimeToVisit, resorts: [] }
+      byCountry[r.country].resorts.push(r)
+    })
+    const countryEntries = Object.values(byCountry)
+    const whenCardsHtml = countryEntries.map(entry => `
+      <div class="bg-white border border-ocean-100 rounded-2xl shadow-card p-5 sm:p-6">
+        <p class="font-sans text-[10px] font-bold uppercase tracking-widest text-ocean-400 mb-1">${escapeHtml(entry.country)}</p>
+        <h3 class="font-serif text-base font-bold text-ocean-950 mb-3">${entry.resorts.map(r => escapeHtml(r.name)).join(' · ')}</h3>
+        <p class="font-sans text-sm text-ocean-700 leading-relaxed">${escapeHtml(entry.bestTimeToVisit)}</p>
+      </div>
+    `).join('')
+    const whenGridCols = countryEntries.length === 1 ? '' : countryEntries.length === 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-2 lg:grid-cols-3'
+    const whenHtml = `
+      <div>
+        <h2 class="font-serif text-xl font-bold text-ocean-950 mb-4">When to Visit</h2>
+        <div class="grid grid-cols-1 ${whenGridCols} gap-4">${whenCardsHtml}</div>
+      </div>
+    `
+
+    // Activities — per resort
+    const perResortGridCols = slugs.length === 2 ? 'sm:grid-cols-2' : slugs.length === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2 lg:grid-cols-4'
+    const activitiesCardsHtml = slugs.map(s => {
+      const r = bySlug[s]
+      return `
+        <div class="bg-white border border-ocean-100 rounded-2xl shadow-card p-5 sm:p-6">
+          <h3 class="font-serif text-base font-bold text-ocean-950 mb-3">${escapeHtml(r.name)}</h3>
+          <p class="font-sans text-sm text-ocean-700 leading-relaxed">${escapeHtml(r.activities)}</p>
+        </div>
+      `
+    }).join('')
+    const activitiesHtml = `
+      <div>
+        <h2 class="font-serif text-xl font-bold text-ocean-950 mb-4">Activities</h2>
+        <div class="grid grid-cols-1 ${perResortGridCols} gap-4">${activitiesCardsHtml}</div>
+      </div>
+    `
+
+    // What You Need to Know — per resort
+    const wyntkCardsHtml = slugs.map(s => {
+      const r = bySlug[s]
+      return `
+        <div class="bg-white border border-ocean-100 rounded-2xl shadow-card p-5 sm:p-6 flex flex-col">
+          <p class="font-sans text-[10px] font-bold uppercase tracking-widest text-ocean-400 mb-1">${escapeHtml(r.country)} · ${r.type === 'adults-only' ? 'Adults Only' : 'Family'}</p>
+          <h3 class="font-serif text-lg font-bold text-ocean-950 mb-3">${escapeHtml(r.name)}</h3>
+          <p class="font-sans text-sm text-ocean-700 leading-relaxed flex-1">${escapeHtml(r.whatYouNeedToKnow)}</p>
+          <a href="${escapeHtml(r.agodaLink)}" target="_blank" rel="noopener noreferrer sponsored" class="mt-5 block text-center font-sans text-sm font-bold bg-ocean-900 hover:bg-ocean-950 text-white rounded-xl py-3 transition-colors">Check Prices →</a>
+        </div>
+      `
+    }).join('')
+    const wyntkHtml = `
+      <div>
+        <h2 class="font-serif text-xl font-bold text-ocean-950 mb-4">What You Need to Know</h2>
+        <div class="grid grid-cols-1 ${perResortGridCols} gap-4">${wyntkCardsHtml}</div>
+      </div>
+    `
+
+    wrap.innerHTML = keyDifferencesHtml + whenHtml + activitiesHtml + wyntkHtml
+  }
+
   function applyExtras() {
     const extras = getExtras()
     if (extras.length === 0) return
@@ -146,6 +232,7 @@
     renderTitle(slugs)
     renderHeroStrip(slugs)
     renderRatingsTable(slugs)
+    renderMultiOverview(slugs)
   }
 
   // ---------- Add resort modal ----------

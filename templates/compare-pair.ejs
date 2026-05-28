@@ -118,6 +118,9 @@ const ratingRows = [
     <% }) %>
   </div>
 
+  <%- /* ───── DYNAMIC OVERVIEW (3+ resorts, populated by JS) ───── */ '' %>
+  <div id="overview-multi" class="hidden space-y-6 mb-6"></div>
+
   <%- /* ───── OVERVIEW (2-resort only) ───── */ '' %>
   <% if (overview) { %>
   <div id="overview-section" class="two-resort-only space-y-6 mb-6">
@@ -287,6 +290,9 @@ const ratingRows = [
   resorts: resorts.map(r => ({
     slug: r.slug, name: r.name, country: r.country, area: r.area, type: r.type,
     ratings: r.ratings, amenities: r.amenities, agodaLink: r.agodaLink,
+    whatYouNeedToKnow: r.whatYouNeedToKnow,
+    bestTimeToVisit: r.bestTimeToVisit,
+    activities: r.activities,
   })),
   ratingRows,
 }) %>
