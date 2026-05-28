@@ -140,9 +140,9 @@ const ratingRows = [
       <div>
         <h2 class="font-serif text-xl font-bold text-ocean-950 mb-4">When to Visit</h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <% [a, b].forEach((r, i) => { %>
+          <% [a, b].forEach(r => { %>
             <div class="bg-white border border-ocean-100 rounded-2xl shadow-card p-5 sm:p-6">
-              <p class="font-sans text-[10px] font-bold uppercase tracking-widest text-ocean-400 mb-1"><%= i === 0 ? 'Resort A' : 'Resort B' %> · <%= r.country %></p>
+              <p class="font-sans text-[10px] font-bold uppercase tracking-widest text-ocean-400 mb-1"><%= r.country %></p>
               <h3 class="font-serif text-base font-bold text-ocean-950 mb-3"><%= r.name %></h3>
               <p class="font-sans text-sm text-ocean-700 leading-relaxed"><%= r.bestTimeToVisit %></p>
             </div>
@@ -155,9 +155,8 @@ const ratingRows = [
     <div>
       <h2 class="font-serif text-xl font-bold text-ocean-950 mb-4">Activities</h2>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <% [a, b].forEach((r, i) => { %>
+        <% [a, b].forEach(r => { %>
           <div class="bg-white border border-ocean-100 rounded-2xl shadow-card p-5 sm:p-6">
-            <p class="font-sans text-[10px] font-bold uppercase tracking-widest text-ocean-400 mb-1"><%= i === 0 ? 'Resort A' : 'Resort B' %></p>
             <h3 class="font-serif text-base font-bold text-ocean-950 mb-3"><%= r.name %></h3>
             <p class="font-sans text-sm text-ocean-700 leading-relaxed"><%= r.activities %></p>
           </div>
@@ -171,7 +170,7 @@ const ratingRows = [
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <% [a, b].forEach((r, i) => { %>
           <div class="bg-white border border-ocean-100 rounded-2xl shadow-card p-5 sm:p-6 flex flex-col">
-            <p class="font-sans text-[10px] font-bold uppercase tracking-widest text-ocean-400 mb-1"><%= i === 0 ? 'Resort A' : 'Resort B' %> · <%= r.country %> · <%= r.type === 'adults-only' ? 'Adults Only' : 'Family' %></p>
+            <p class="font-sans text-[10px] font-bold uppercase tracking-widest text-ocean-400 mb-1"><%= r.country %> · <%= r.type === 'adults-only' ? 'Adults Only' : 'Family' %></p>
             <h3 class="font-serif text-lg font-bold text-ocean-950 mb-3"><%= r.name %></h3>
             <div class="rounded-lg bg-ocean-50 border border-ocean-100 p-3 mb-4">
               <p class="font-sans text-[11px] font-bold uppercase tracking-widest text-ocean-500 mb-1">Choose if…</p>
