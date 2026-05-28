@@ -104,6 +104,38 @@
       slugs.map(s => `<div class="py-3 flex items-center justify-center"><a href="${bySlug[s].agodaLink}" target="_blank" rel="noopener noreferrer sponsored" class="inline-block font-sans text-[11px] font-bold uppercase tracking-wide bg-ocean-900 hover:bg-ocean-950 text-white px-3 py-1.5 rounded transition-colors">Book Now</a></div>`).join('')
     wrap.appendChild(bookRow)
 
+    const hasPriceLevel = slugs.some(s => bySlug[s].priceLevel)
+    if (hasPriceLevel) {
+      const plRow = document.createElement('div')
+      plRow.className = 'ratings-row grid border-b border-ocean-50 bg-ocean-50/40'
+      plRow.style.gridTemplateColumns = tmpl
+      plRow.innerHTML = `<div class="px-4 sm:px-5 py-3.5 font-sans text-sm text-ocean-700 font-medium">Price Level</div>` +
+        slugs.map(s => `<div class="py-3.5 flex items-center justify-center"><span class="font-sans text-sm font-semibold text-ocean-800">${escapeHtml(bySlug[s].priceLevel || '—')}</span></div>`).join('')
+      wrap.appendChild(plRow)
+    }
+
+    const gtRow = document.createElement('div')
+    gtRow.className = 'ratings-row grid border-b border-ocean-50 bg-white'
+    gtRow.style.gridTemplateColumns = tmpl
+    gtRow.innerHTML = `<div class="px-4 sm:px-5 py-3.5 font-sans text-sm text-ocean-700 font-medium">Guest Type</div>` +
+      slugs.map(s => {
+        const r = bySlug[s]
+        const label = r.type === 'adults-only' ? 'Adults Only' : 'Family'
+        const note = r.ageNote ? `<br><span class="font-normal text-ocean-500">(${escapeHtml(r.ageNote)})</span>` : ''
+        return `<div class="py-3.5 flex items-center justify-center px-2 text-center"><span class="font-sans text-xs font-semibold text-ocean-800 leading-tight">${label}${note}</span></div>`
+      }).join('')
+    wrap.appendChild(gtRow)
+
+    const hasNotes = slugs.some(s => bySlug[s].notes)
+    if (hasNotes) {
+      const notesRow = document.createElement('div')
+      notesRow.className = 'ratings-row grid border-b border-ocean-50 bg-ocean-50/40'
+      notesRow.style.gridTemplateColumns = tmpl
+      notesRow.innerHTML = `<div class="px-4 sm:px-5 py-3.5 font-sans text-sm text-ocean-700 font-medium">Notes</div>` +
+        slugs.map(s => `<div class="py-3 px-3 flex items-center justify-center text-center"><span class="font-sans text-[11px] text-ocean-600 leading-snug">${escapeHtml(bySlug[s].notes || '—')}</span></div>`).join('')
+      wrap.appendChild(notesRow)
+    }
+
     data.ratingRows.forEach((row, i) => {
       const scores = slugs.map(s => bySlug[s].ratings[row.key])
       if (scores.every(v => v === null)) return

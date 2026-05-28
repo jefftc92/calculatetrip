@@ -83,6 +83,36 @@ const ratingRows = [
       </div>
     </div>
 
+    <% if (a.priceLevel || b.priceLevel) { %>
+    <div class="ratings-row grid grid-cols-[1fr_110px_110px] sm:grid-cols-[1fr_140px_140px] border-b border-ocean-50 bg-ocean-50/40">
+      <div class="px-4 sm:px-5 py-3.5 font-sans text-sm text-ocean-700 font-medium">Price Level</div>
+      <div class="py-3.5 flex items-center justify-center"><span class="font-sans text-sm font-semibold text-ocean-800"><%= a.priceLevel || '—' %></span></div>
+      <div class="py-3.5 flex items-center justify-center"><span class="font-sans text-sm font-semibold text-ocean-800"><%= b.priceLevel || '—' %></span></div>
+    </div>
+    <% } %>
+
+    <div class="ratings-row grid grid-cols-[1fr_110px_110px] sm:grid-cols-[1fr_140px_140px] border-b border-ocean-50 bg-white">
+      <div class="px-4 sm:px-5 py-3.5 font-sans text-sm text-ocean-700 font-medium">Guest Type</div>
+      <div class="py-3.5 flex items-center justify-center px-2 text-center">
+        <span class="font-sans text-xs font-semibold text-ocean-800 leading-tight">
+          <%= a.type === 'adults-only' ? 'Adults Only' : 'Family' %><% if (a.ageNote) { %><br><span class="font-normal text-ocean-500">(<%= a.ageNote %>)</span><% } %>
+        </span>
+      </div>
+      <div class="py-3.5 flex items-center justify-center px-2 text-center">
+        <span class="font-sans text-xs font-semibold text-ocean-800 leading-tight">
+          <%= b.type === 'adults-only' ? 'Adults Only' : 'Family' %><% if (b.ageNote) { %><br><span class="font-normal text-ocean-500">(<%= b.ageNote %>)</span><% } %>
+        </span>
+      </div>
+    </div>
+
+    <% if (a.notes || b.notes) { %>
+    <div class="ratings-row grid grid-cols-[1fr_110px_110px] sm:grid-cols-[1fr_140px_140px] border-b border-ocean-50 bg-ocean-50/40">
+      <div class="px-4 sm:px-5 py-3.5 font-sans text-sm text-ocean-700 font-medium">Notes</div>
+      <div class="py-3 px-3 flex items-center justify-center text-center"><span class="font-sans text-[11px] text-ocean-600 leading-snug"><%= a.notes || '—' %></span></div>
+      <div class="py-3 px-3 flex items-center justify-center text-center"><span class="font-sans text-[11px] text-ocean-600 leading-snug"><%= b.notes || '—' %></span></div>
+    </div>
+    <% } %>
+
     <% ratingRows.forEach((row, i) => {
       const sA = a.ratings[row.key]
       const sB = b.ratings[row.key]
@@ -205,8 +235,13 @@ const ratingRows = [
   <%- /* ───── MORE COMPARISONS ───── */ '' %>
   <div class="bg-white border border-ocean-100 rounded-2xl p-5 sm:p-6 shadow-card mb-6">
     <h2 class="font-serif text-lg font-bold text-ocean-950 mb-4">More Comparisons</h2>
+    <%
+      const others = resorts.filter(r => r.slug !== a.slug && r.slug !== b.slug)
+      const sameCountry = others.filter(r => r.country === a.country || r.country === b.country)
+      const relatedResorts = [...sameCountry, ...others.filter(r => r.country !== a.country && r.country !== b.country)].slice(0, 6)
+    %>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-      <% resorts.filter(r => r.slug !== a.slug && r.slug !== b.slug).forEach(r => { %>
+      <% relatedResorts.forEach(r => { %>
         <a href="<%= pairUrl(a.slug, r.slug) %>" class="font-sans text-sm text-ocean-700 hover:text-ocean-950 hover:underline transition-colors py-0.5"><%= a.name %> vs <%= r.name %> →</a>
         <a href="<%= pairUrl(b.slug, r.slug) %>" class="font-sans text-sm text-ocean-700 hover:text-ocean-950 hover:underline transition-colors py-0.5"><%= b.name %> vs <%= r.name %> →</a>
       <% }) %>
@@ -289,6 +324,7 @@ const ratingRows = [
   base: [a.slug, b.slug],
   resorts: resorts.map(r => ({
     slug: r.slug, name: r.name, country: r.country, area: r.area, type: r.type,
+    priceLevel: r.priceLevel || null, ageNote: r.ageNote || null, notes: r.notes || null,
     ratings: r.ratings, amenities: r.amenities, agodaLink: r.agodaLink,
     whatYouNeedToKnow: r.whatYouNeedToKnow,
     bestTimeToVisit: r.bestTimeToVisit,
