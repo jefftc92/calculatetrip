@@ -129,15 +129,39 @@ const ratingRows = [
       <p class="font-sans text-base text-ocean-700 leading-relaxed"><%= overview.keyDifferences %></p>
     </div>
 
-    <%- /* ── Practical info (full-width sections that apply to both resorts together) ── */ '' %>
-    <div class="bg-white border border-ocean-100 rounded-2xl shadow-card divide-y divide-ocean-100">
-      <div class="p-6 sm:p-8">
-        <p class="font-sans text-xs font-bold uppercase tracking-widest text-ocean-500 mb-2">When to Visit</p>
-        <p class="font-sans text-sm text-ocean-700 leading-relaxed"><%= overview.whenToVisit %></p>
+    <%- /* ── When to Visit (single card if same country, side-by-side if different) ── */ '' %>
+    <% if (a.country === b.country) { %>
+      <div class="bg-white border border-ocean-100 rounded-2xl shadow-card p-6 sm:p-8">
+        <p class="font-sans text-xs font-bold uppercase tracking-widest text-ocean-500 mb-1">When to Visit</p>
+        <h2 class="font-serif text-xl font-bold text-ocean-950 mb-3"><%= a.country %></h2>
+        <p class="font-sans text-sm text-ocean-700 leading-relaxed"><%= a.bestTimeToVisit %></p>
       </div>
-      <div class="p-6 sm:p-8">
-        <p class="font-sans text-xs font-bold uppercase tracking-widest text-ocean-500 mb-2">Activities</p>
-        <p class="font-sans text-sm text-ocean-700 leading-relaxed"><%= overview.activities %></p>
+    <% } else { %>
+      <div>
+        <h2 class="font-serif text-xl font-bold text-ocean-950 mb-4">When to Visit</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <% [a, b].forEach((r, i) => { %>
+            <div class="bg-white border border-ocean-100 rounded-2xl shadow-card p-5 sm:p-6">
+              <p class="font-sans text-[10px] font-bold uppercase tracking-widest text-ocean-400 mb-1"><%= i === 0 ? 'Resort A' : 'Resort B' %> · <%= r.country %></p>
+              <h3 class="font-serif text-base font-bold text-ocean-950 mb-3"><%= r.name %></h3>
+              <p class="font-sans text-sm text-ocean-700 leading-relaxed"><%= r.bestTimeToVisit %></p>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+    <% } %>
+
+    <%- /* ── Activities (always side-by-side per resort) ── */ '' %>
+    <div>
+      <h2 class="font-serif text-xl font-bold text-ocean-950 mb-4">Activities</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <% [a, b].forEach((r, i) => { %>
+          <div class="bg-white border border-ocean-100 rounded-2xl shadow-card p-5 sm:p-6">
+            <p class="font-sans text-[10px] font-bold uppercase tracking-widest text-ocean-400 mb-1"><%= i === 0 ? 'Resort A' : 'Resort B' %></p>
+            <h3 class="font-serif text-base font-bold text-ocean-950 mb-3"><%= r.name %></h3>
+            <p class="font-sans text-sm text-ocean-700 leading-relaxed"><%= r.activities %></p>
+          </div>
+        <% }) %>
       </div>
     </div>
 
@@ -217,10 +241,10 @@ const ratingRows = [
           a: 'Every resort in our database is verified all-inclusive. At minimum, the all-inclusive rate covers accommodation, all meals, beverages (alcoholic and non-alcoholic), and core activities. Some resorts also include diving, guided excursions, or spa credits. Premium add-ons like specialty dining, spa treatments, or off-site excursions may carry an additional charge — confirm specifics with the resort or booking platform at the time of reservation.',
         },
         {
-          q: `What is the best time to visit ${a.country === b.country ? a.country : `${a.country} and ${b.country}`}?`,
-          a: overview
-            ? overview.whenToVisit
-            : `Both ${a.name} and ${b.name} are best visited during their respective dry seasons, typically December through April for most Caribbean and Central American destinations. Check individual resort pages for destination-specific seasonal advice.`,
+          q: `What is the best time to visit ${a.country === b.country ? a.country : `${a.country} or ${b.country}`}?`,
+          a: a.country === b.country
+            ? a.bestTimeToVisit
+            : `${a.name} (${a.country}): ${a.bestTimeToVisit} ${b.name} (${b.country}): ${b.bestTimeToVisit}`,
         },
       ].forEach(faq => { %>
         <details class="group py-4">
