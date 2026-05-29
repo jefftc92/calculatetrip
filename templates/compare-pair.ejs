@@ -152,14 +152,23 @@ const ratingRows = [
   <div id="overview-multi" class="hidden space-y-6 mb-6"></div>
 
   <%- /* ───── OVERVIEW (2-resort only) ───── */ '' %>
-  <% if (overview) { %>
   <div id="overview-section" class="two-resort-only space-y-6 mb-6">
 
-    <%- /* ── Key Differences (full-width, applies to comparison as a whole) ── */ '' %>
+    <%- /* ── Key Differences (full-width) ── */ '' %>
     <div class="bg-white border border-ocean-100 rounded-2xl shadow-card p-6 sm:p-8">
       <p class="font-sans text-xs font-bold uppercase tracking-widest text-ocean-500 mb-2">Editorial Overview</p>
       <h2 class="font-serif text-2xl font-bold text-ocean-950 mb-4">Key Differences</h2>
-      <p class="font-sans text-base text-ocean-700 leading-relaxed"><%= overview.keyDifferences %></p>
+      <% if (overview) { %>
+        <p class="font-sans text-base text-ocean-700 leading-relaxed"><%= overview.keyDifferences %></p>
+      <% } else { %>
+        <p class="font-sans text-base text-ocean-700 leading-relaxed">
+          <%= winner.name %> (<%= winner.ratings.overall %>/10) edges ahead of <%= loser.name %> (<%= loser.ratings.overall %>/10) overall, but both rank among the finest all-inclusive resorts in the region.<% if (a.type !== b.type) { %> The most decisive factor for many travelers will be audience: <%= a.type === 'adults-only' ? a.name : b.name %> is adults-only, while <%= a.type === 'family' ? a.name : b.name %> welcomes families.<% } %><% if (a.country !== b.country) { %> <%= a.name %> is located in <%= a.country %>, while <%= b.name %> is in <%= b.country %> — a meaningful difference in travel logistics, climate, and overall character.<% } %>
+        </p>
+        <div class="flex flex-col sm:flex-row gap-3 mt-5">
+          <a href="<%= winner.agodaLink %>" target="_blank" rel="noopener noreferrer sponsored" class="flex-1 text-center font-sans text-sm font-bold bg-gold-500 hover:bg-gold-600 text-white rounded-xl py-3 transition-colors">Check Prices — <%= winner.name.split(' ').slice(0,2).join(' ') %> →</a>
+          <a href="<%= loser.agodaLink %>" target="_blank" rel="noopener noreferrer sponsored" class="flex-1 text-center font-sans text-sm font-semibold bg-ocean-100 hover:bg-ocean-200 text-ocean-900 rounded-xl py-3 transition-colors">Check Prices — <%= loser.name.split(' ').slice(0,2).join(' ') %> →</a>
+        </div>
+      <% } %>
     </div>
 
     <%- /* ── When to Visit (single card if same country, side-by-side if different) ── */ '' %>
@@ -205,10 +214,12 @@ const ratingRows = [
           <div class="bg-white border border-ocean-100 rounded-2xl shadow-card p-5 sm:p-6 flex flex-col">
             <p class="font-sans text-[10px] font-bold uppercase tracking-widest text-ocean-400 mb-1"><%= r.country %> · <%= r.type === 'adults-only' ? 'Adults Only' : 'Family' %></p>
             <h3 class="font-serif text-lg font-bold text-ocean-950 mb-3"><%= r.name %></h3>
+            <% if (overview) { %>
             <div class="rounded-lg bg-ocean-50 border border-ocean-100 p-3 mb-4">
               <p class="font-sans text-[11px] font-bold uppercase tracking-widest text-ocean-500 mb-1">Choose if…</p>
               <p class="font-sans text-sm text-ocean-700 leading-relaxed"><%= i === 0 ? overview.whoShouldChooseA : overview.whoShouldChooseB %></p>
             </div>
+            <% } %>
             <p class="font-sans text-sm text-ocean-700 leading-relaxed flex-1"><%= r.whatYouNeedToKnow %></p>
             <a href="<%= r.agodaLink %>" target="_blank" rel="noopener noreferrer sponsored" class="mt-5 block text-center font-sans text-sm font-bold <%= i === 0 ? 'bg-gold-500 hover:bg-gold-600 text-white' : 'bg-ocean-900 hover:bg-ocean-950 text-white' %> rounded-xl py-3 transition-colors">Check Prices — <%= r.name.split(' ').slice(0,2).join(' ') %> →</a>
           </div>
@@ -217,20 +228,6 @@ const ratingRows = [
     </div>
 
   </div>
-  <% } else { %>
-  <%- /* Fallback for pairs without a custom overview */ '' %>
-  <div id="overview-section" class="two-resort-only bg-white border border-ocean-100 rounded-2xl shadow-card p-5 sm:p-7 mb-6">
-    <p class="font-sans text-xs font-bold uppercase tracking-widest text-ocean-500 mb-1">Editorial Summary</p>
-    <h2 class="font-serif text-xl font-bold text-ocean-950 mb-3">Key Differences</h2>
-    <p class="font-sans text-sm text-ocean-700 leading-relaxed mb-5">
-      <%= winner.name %> (<%= winner.ratings.overall %>/10) edges ahead of <%= loser.name %> (<%= loser.ratings.overall %>/10) overall, but both rank among the finest all-inclusive resorts in the region.<% if (a.type !== b.type) { %> The most decisive factor for many travelers will be audience: <%= a.type === 'adults-only' ? a.name : b.name %> is adults-only, while <%= a.type === 'family' ? a.name : b.name %> welcomes families.<% } %>
-    </p>
-    <div class="flex flex-col sm:flex-row gap-3">
-      <a href="<%= winner.agodaLink %>" target="_blank" rel="noopener noreferrer sponsored" class="flex-1 text-center font-sans text-sm font-bold bg-gold-500 hover:bg-gold-600 text-white rounded-xl py-3 transition-colors">Check Prices — <%= winner.name.split(' ').slice(0,2).join(' ') %> →</a>
-      <a href="<%= loser.agodaLink %>" target="_blank" rel="noopener noreferrer sponsored" class="flex-1 text-center font-sans text-sm font-semibold bg-ocean-100 hover:bg-ocean-200 text-ocean-900 rounded-xl py-3 transition-colors">Check Prices — <%= loser.name.split(' ').slice(0,2).join(' ') %> →</a>
-    </div>
-  </div>
-  <% } %>
 
   <%- /* ───── MORE COMPARISONS ───── */ '' %>
   <div class="bg-white border border-ocean-100 rounded-2xl p-5 sm:p-6 shadow-card mb-6">
