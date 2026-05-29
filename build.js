@@ -12,7 +12,7 @@ const ejs = require('ejs')
 const SITE_URL = 'https://www.calculatetrip.com'
 const SITE_NAME = 'CalculateTrip'
 
-const { resorts, bySlug, byCountry, byType, topBy, countries, allComparisonPairs } = require('./data/resorts')
+const { resorts, bySlug, byCountry, byType, topBy, countries, allComparisonPairs, pairOverviews } = require('./data/resorts')
 
 const ROOT = __dirname
 const DIST = path.join(ROOT, 'dist')
@@ -62,11 +62,25 @@ function pairUrl(slug1, slug2) {
   return `/compare/${a}-vs-${b}/`
 }
 
+const RATING_TOOLTIPS = {
+  overall:      'A weighted composite of all category scores, calculated from thousands of verified guest reviews using AI-assisted analysis across major booking platforms.',
+  food:         'Reflects restaurant quality, variety, and the all-inclusive meal program. AI-analyzed from verified guest reviews.',
+  beach:        'Rates sand condition, water clarity, and beach environment. Resorts without a traditional beach show no score.',
+  pool:         'Reflects pool quality, design, and guest satisfaction. AI-analyzed from verified guest reviews.',
+  atmosphere:   'Captures overall ambiance, vibe, and setting — including landscaping, communal areas, and resort energy.',
+  location:     'Rates the resort\'s setting, scenery, and surrounding environment.',
+  room:         'Reflects room size, comfort, furnishings, and overall quality as reported by guests.',
+  value:        'Scores the all-inclusive package value relative to price paid, as reported by guests.',
+  cleanliness:  'Reflects housekeeping standards across rooms and public areas. AI-analyzed from verified guest reviews.',
+  service:      'Rates staff warmth, attentiveness, and responsiveness. AI-analyzed from verified guest reviews.',
+  sleepQuality: 'Reflects noise levels, bed comfort, and overall quality of rest as reported by guests.',
+}
+
 // Locals available to every template
 const baseLocals = {
   SITE_URL, SITE_NAME,
   resorts, bySlug, byCountry, byType, topBy, countries: countries(), allComparisonPairs: allComparisonPairs(),
-  RATING_LABELS, scoreColor, scoreLabel, pairUrl,
+  RATING_LABELS, RATING_TOOLTIPS, scoreColor, scoreLabel, pairUrl, pairOverviews,
 }
 
 function render(templateName, locals = {}) {

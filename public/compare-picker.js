@@ -50,14 +50,14 @@
     btn.disabled = !a || !b || a === b
   }
 
-  function setupSlot(countryId, areaRowId, areaId, resortId) {
+  function setupSlot(countryId, areaId, resortId) {
     const countryEl = document.getElementById(countryId)
-    const areaRowEl = document.getElementById(areaRowId)
     const areaEl    = document.getElementById(areaId)
     const resortEl  = document.getElementById(resortId)
 
     countryEl.addEventListener('change', () => {
-      resetSelect(areaEl, 'Select area')
+      resetSelect(areaEl, 'Select region / area')
+      areaEl.classList.add('hidden')
       resetSelect(resortEl, 'Select resort')
       updateSubmitBtn()
 
@@ -66,12 +66,10 @@
 
       const areaKeys = Object.keys(areas)
       if (areaKeys.length === 1) {
-        // Single area — hide area row and go straight to resort
-        areaRowEl.classList.add('hidden')
         areaEl.value = areaKeys[0]
         populateResorts(resortEl, areas[areaKeys[0]])
       } else {
-        areaRowEl.classList.remove('hidden')
+        areaEl.classList.remove('hidden')
         areaKeys.forEach(area => {
           const opt = document.createElement('option')
           opt.value = area
@@ -96,8 +94,8 @@
     })
   }
 
-  setupSlot('country-a', 'area-row-a', 'area-a', 'resort-a')
-  setupSlot('country-b', 'area-row-b', 'area-b', 'resort-b')
+  setupSlot('country-a', 'area-a', 'resort-a')
+  setupSlot('country-b', 'area-b', 'resort-b')
 
   form.addEventListener('submit', e => {
     e.preventDefault()
