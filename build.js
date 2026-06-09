@@ -12,7 +12,51 @@ const ejs = require('ejs')
 const SITE_URL = 'https://www.calculatetrip.com'
 const SITE_NAME = 'CalculateTrip'
 
-const { resorts, bySlug, byCountry, byType, topBy, countries, allComparisonPairs, pairOverviews } = require('./data/resorts')
+const { resorts: legacyResorts, pairOverviews: legacyPairOverviews } = require('./data/resorts')
+const { newResorts, newPairOverviews, COMPANY_MAP, getMexicoZone } = require('./data/resorts-new')
+
+const resorts = [...legacyResorts, ...newResorts]
+const pairOverviews = { ...legacyPairOverviews, ...newPairOverviews }
+
+const LEGACY_SLUGS = new Set(legacyResorts.map(r => r.slug))
+
+function shouldGeneratePair(a, b) {
+  if (LEGACY_SLUGS.has(a.slug) && LEGACY_SLUGS.has(b.slug)) return true
+  const ac = COMPANY_MAP[a.slug], bc = COMPANY_MAP[b.slug]
+  if (ac && bc && ac === bc) return true
+  if (a.country !== b.country) return false
+  if (a.country === 'Mexico') return getMexicoZone(a.area) === getMexicoZone(b.area)
+  return true
+}
+
+const bySlugMap = Object.fromEntries(resorts.map(r => [r.slug, r]))
+function bySlug(slug) { return bySlugMap[slug] }
+function byCountry(countrySlug) { return resorts.filter(r => r.countrySlug === countrySlug) }
+function byType(type) { return resorts.filter(r => r.type === type) }
+function topBy(key, n) {
+  return [...resorts]
+    .filter(r => r.ratings[key] !== null && r.ratings[key] !== undefined)
+    .sort((a, b) => b.ratings[key] - a.ratings[key])
+    .slice(0, n === undefined ? resorts.length : n)
+}
+function countries() {
+  const seen = new Set()
+  return resorts
+    .filter(r => { if (seen.has(r.countrySlug)) return false; seen.add(r.countrySlug); return true })
+    .map(r => ({ name: r.country, slug: r.countrySlug, count: byCountry(r.countrySlug).length }))
+}
+function allComparisonPairs() {
+  const pairs = []
+  for (let i = 0; i < resorts.length; i++) {
+    for (let j = i + 1; j < resorts.length; j++) {
+      const x = resorts[i], y = resorts[j]
+      if (!shouldGeneratePair(x, y)) continue
+      const [a, b] = x.slug < y.slug ? [x, y] : [y, x]
+      pairs.push({ a, b })
+    }
+  }
+  return pairs
+}
 
 const ROOT = __dirname
 const DIST = path.join(ROOT, 'dist')
