@@ -13,22 +13,30 @@ const SITE_URL = 'https://www.calculatetrip.com'
 const SITE_NAME = 'CalculateTrip'
 
 const { resorts: legacyResorts, pairOverviews: legacyPairOverviews } = require('./data/resorts')
-const { newResorts, newPairOverviews, COMPANY_MAP, getMexicoZone } = require('./data/resorts-new')
+const { newResorts, newPairOverviews, shouldGeneratePair } = require('./data/resorts-new')
 
 const resorts = [...legacyResorts, ...newResorts]
-const pairOverviews = { ...legacyPairOverviews, ...newPairOverviews }
 
-const LEGACY_SLUGS = new Set(legacyResorts.map(r => r.slug))
-
-function shouldGeneratePair(a, b) {
-  if (LEGACY_SLUGS.has(a.slug) && LEGACY_SLUGS.has(b.slug)) return true
-  const ac = COMPANY_MAP[a.slug], bc = COMPANY_MAP[b.slug]
-  if (ac && bc && ac === bc) return true
-  if (a.country !== b.country) return false
-  if (a.country === 'Mexico') return getMexicoZone(a.area) === getMexicoZone(b.area)
-  return true
+// Merge pair overviews: legacy (hand-authored) first and untouched, then any
+// module-level new overviews, then every generated shard. Existing entries are
+// never overwritten by generated ones.
+function loadShardOverviews() {
+  const dir = path.join(__dirname, 'data', 'pair-overviews')
+  const merged = {}
+  if (fs.existsSync(dir)) {
+    for (const f of fs.readdirSync(dir).sort()) {
+      if (!/\.js$/.test(f)) continue
+      Object.assign(merged, require(path.join(dir, f)))
+    }
+  }
+  return merged
 }
+const shardOverviews = loadShardOverviews()
+const pairOverviews = { ...shardOverviews, ...newPairOverviews, ...legacyPairOverviews }
 
+// ---------------------------------------------------------------------------
+// Data helpers over the combined resort set
+// ---------------------------------------------------------------------------
 const bySlugMap = Object.fromEntries(resorts.map(r => [r.slug, r]))
 function bySlug(slug) { return bySlugMap[slug] }
 function byCountry(countrySlug) { return resorts.filter(r => r.countrySlug === countrySlug) }
