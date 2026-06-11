@@ -1,9 +1,13 @@
 // New-resort ingestion + comparison-grouping logic.
 //
-// Parses data/resorts-extra.csv (the full ~885-row dataset) at load time,
+// Parses data/resorts-extra-{1..4}.csv (the full ~885-row dataset) at load time,
 // skips the 125 resorts already hand-authored in data/resorts.js, and emits
 // the remaining resorts plus the helpers build.js uses to decide which
 // resort pairs deserve a comparison page.
+//
+// CSV columns (20 total, no Address column):
+//   0=Name 1=AffiliateLink 2=PriceLevel 3=AvgRating 4-13=Ratings
+//   14=Country 15=Area 16=Airport 17=FamilyAdults 18=Notes 19=Amenities
 //
 // A pair gets a comparison page when:
 //   - both resorts are legacy (already true in the original data), OR
@@ -200,47 +204,55 @@ function parseCSV(text) {
 }
 
 // ---------------------------------------------------------------------------
-// Load legacy resorts and build new-resort list from CSV
+// Load legacy resorts and build new-resort list from CSV parts
 // ---------------------------------------------------------------------------
 const { resorts: legacyResorts } = require('./resorts')
 const LEGACY_SLUGS = new Set(legacyResorts.map(r => r.slug))
 const LEGACY_NAMES = new Set(legacyResorts.map(r => r.name.toLowerCase().trim()))
 
-const CSV_PATH = path.join(__dirname, 'resorts-extra.csv')
+// CSV columns (20 total): 0=Name 1=AffiliateLink 2=PriceLevel 3=AvgRating
+// 4=Food 5=Beach 6=Pool 7=Atmosphere 8=Location 9=Room 10=Value
+// 11=Cleanliness 12=Service 13=SleepQuality 14=Country
+// 15=Area 16=Airport 17=FamilyAdults 18=Notes 19=Amenities
+const CSV_PARTS = [1, 2, 3, 4].map(n =>
+  path.join(__dirname, `resorts-extra-${n}.csv`)
+)
 
 function buildNewResorts() {
-  if (!fs.existsSync(CSV_PATH)) return []
-  const rows = parseCSV(fs.readFileSync(CSV_PATH, 'utf8'))
   const out = [], seen = new Set()
-  for (const cols of rows) {
-    if (cols.length < 19) continue
-    const name = (cols[0] || '').trim()
-    if (!name || /resort name/i.test(name) || /^adults only$/i.test(name)) continue
-    const slug = slugify(name)
-    if (!slug) continue
-    if (LEGACY_SLUGS.has(slug) || LEGACY_NAMES.has(name.toLowerCase().trim())) continue
-    if (seen.has(slug)) continue
-    seen.add(slug)
-    const country = (cols[14] || '').trim()
-    const area = (cols[16] || '').trim()
-    out.push({
-      slug, name, country,
-      countrySlug: countrySlugFn(country),
-      area,
-      airport: (cols[17] || '').trim(),
-      type: typeOf(cols[18]),
-      ageNote: (cols[19] || '').trim() || null,
-      priceLevel: (cols[2] || '').trim() || null,
-      notes: null,
-      description: '', heroTagline: '', whatYouNeedToKnow: '', bestTimeToVisit: '', activities: '',
-      amenities: (cols[20] || '').split(',').map(s => s.trim()).filter(Boolean),
-      agodaLink: (cols[1] || '').trim(),
-      ratings: {
-        overall: num(cols[3]), food: num(cols[4]), beach: num(cols[5]), pool: num(cols[6]),
-        atmosphere: num(cols[7]), location: num(cols[8]), room: num(cols[9]), value: num(cols[10]),
-        cleanliness: num(cols[11]), service: num(cols[12]), sleepQuality: num(cols[13]),
-      },
-    })
+  for (const csvPath of CSV_PARTS) {
+    if (!fs.existsSync(csvPath)) continue
+    const rows = parseCSV(fs.readFileSync(csvPath, 'utf8'))
+    for (const cols of rows) {
+      if (cols.length < 18) continue
+      const name = (cols[0] || '').trim()
+      if (!name || /resort name/i.test(name) || /^adults only$/i.test(name)) continue
+      const slug = slugify(name)
+      if (!slug) continue
+      if (LEGACY_SLUGS.has(slug) || LEGACY_NAMES.has(name.toLowerCase().trim())) continue
+      if (seen.has(slug)) continue
+      seen.add(slug)
+      const country = (cols[14] || '').trim()
+      const area = (cols[15] || '').trim()
+      out.push({
+        slug, name, country,
+        countrySlug: countrySlugFn(country),
+        area,
+        airport: (cols[16] || '').trim(),
+        type: typeOf(cols[17]),
+        ageNote: (cols[18] || '').trim() || null,
+        priceLevel: (cols[2] || '').trim() || null,
+        notes: null,
+        description: '', heroTagline: '', whatYouNeedToKnow: '', bestTimeToVisit: '', activities: '',
+        amenities: (cols[19] || '').split(',').map(s => s.trim()).filter(Boolean),
+        agodaLink: (cols[1] || '').trim(),
+        ratings: {
+          overall: num(cols[3]), food: num(cols[4]), beach: num(cols[5]), pool: num(cols[6]),
+          atmosphere: num(cols[7]), location: num(cols[8]), room: num(cols[9]), value: num(cols[10]),
+          cleanliness: num(cols[11]), service: num(cols[12]), sleepQuality: num(cols[13]),
+        },
+      })
+    }
   }
   return out
 }
