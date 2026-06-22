@@ -12,7 +12,57 @@ const ejs = require('ejs')
 const SITE_URL = 'https://www.calculatetrip.com'
 const SITE_NAME = 'CalculateTrip'
 
-const { resorts, bySlug, byCountry, byType, topBy, countries, allComparisonPairs, pairOverviews } = require('./data/resorts')
+const { resorts: legacyResorts, pairOverviews: legacyPairOverviews } = require('./data/resorts')
+const { newResorts, newPairOverviews, shouldGeneratePair } = require('./data/resorts-new')
+
+const resorts = [...legacyResorts, ...newResorts]
+
+// Merge overviews: shards first (lowest priority), then module-level new,
+// then legacy hand-authored (highest priority, never overwritten).
+function loadShardOverviews() {
+  const dir = path.join(__dirname, 'data', 'pair-overviews')
+  const merged = {}
+  if (fs.existsSync(dir)) {
+    for (const f of fs.readdirSync(dir).sort()) {
+      if (!/\.js$/.test(f)) continue
+      Object.assign(merged, require(path.join(dir, f)))
+    }
+  }
+  return merged
+}
+const pairOverviews = { ...loadShardOverviews(), ...newPairOverviews, ...legacyPairOverviews }
+
+// ---------------------------------------------------------------------------
+// Data helpers over the combined resort set
+// ---------------------------------------------------------------------------
+const bySlugMap = Object.fromEntries(resorts.map(r => [r.slug, r]))
+function bySlug(slug) { return bySlugMap[slug] }
+function byCountry(countrySlug) { return resorts.filter(r => r.countrySlug === countrySlug) }
+function byType(type) { return resorts.filter(r => r.type === type) }
+function topBy(key, n) {
+  return [...resorts]
+    .filter(r => r.ratings[key] !== null && r.ratings[key] !== undefined)
+    .sort((a, b) => b.ratings[key] - a.ratings[key])
+    .slice(0, n === undefined ? resorts.length : n)
+}
+function countries() {
+  const seen = new Set()
+  return resorts
+    .filter(r => { if (seen.has(r.countrySlug)) return false; seen.add(r.countrySlug); return true })
+    .map(r => ({ name: r.country, slug: r.countrySlug, count: byCountry(r.countrySlug).length }))
+}
+function allComparisonPairs() {
+  const pairs = []
+  for (let i = 0; i < resorts.length; i++) {
+    for (let j = i + 1; j < resorts.length; j++) {
+      const x = resorts[i], y = resorts[j]
+      if (!shouldGeneratePair(x, y)) continue
+      const [a, b] = x.slug < y.slug ? [x, y] : [y, x]
+      pairs.push({ a, b })
+    }
+  }
+  return pairs
+}
 
 const ROOT = __dirname
 const DIST = path.join(ROOT, 'dist')
@@ -56,7 +106,6 @@ function scoreLabel(s) {
   return 'Fair'
 }
 
-// Build a pair URL with the alphabetically-first slug as 'a'
 function pairUrl(slug1, slug2) {
   const [a, b] = [slug1, slug2].sort()
   return `/compare/${a}-vs-${b}/`
@@ -67,7 +116,7 @@ const RATING_TOOLTIPS = {
   food:         'Reflects restaurant quality, variety, and the all-inclusive meal program. AI-analyzed from verified guest reviews.',
   beach:        'Rates sand condition, water clarity, and beach environment. Resorts without a traditional beach show no score.',
   pool:         'Reflects pool quality, design, and guest satisfaction. AI-analyzed from verified guest reviews.',
-  atmosphere:   'Captures overall ambiance, vibe, and setting — including landscaping, communal areas, and resort energy.',
+  atmosphere:   'Captures overall ambiance, vibe, and setting -- including landscaping, communal areas, and resort energy.',
   location:     'Rates the resort\'s setting, scenery, and surrounding environment.',
   room:         'Reflects room size, comfort, furnishings, and overall quality as reported by guests.',
   value:        'Scores the all-inclusive package value relative to price paid, as reported by guests.',
@@ -76,10 +125,11 @@ const RATING_TOOLTIPS = {
   sleepQuality: 'Reflects noise levels, bed comfort, and overall quality of rest as reported by guests.',
 }
 
-// Locals available to every template
 const baseLocals = {
   SITE_URL, SITE_NAME,
-  resorts, bySlug, byCountry, byType, topBy, countries: countries(), allComparisonPairs: allComparisonPairs(),
+  resorts, bySlug, byCountry, byType, topBy,
+  countries: countries(),
+  allComparisonPairs: allComparisonPairs(),
   RATING_LABELS, RATING_TOOLTIPS, scoreColor, scoreLabel, pairUrl, pairOverviews,
 }
 
@@ -89,7 +139,6 @@ function render(templateName, locals = {}) {
 }
 
 async function writeHtml(routePath, html) {
-  // routePath like '/', '/resorts/', '/resorts/foo/' → dist/.../index.html
   const dir = path.join(DIST, routePath.replace(/^\/|\/$/g, ''))
   mkdirp(dir)
   fs.writeFileSync(path.join(dir, 'index.html'), html, 'utf8')
@@ -109,22 +158,21 @@ async function buildPage(routePath, templateName, locals = {}, meta = {}) {
 }
 
 async function build() {
-  console.log('🧹 Cleaning dist/')
+  console.log('Cleaning dist/')
   rmrf(DIST)
   mkdirp(DIST)
 
-  console.log('📦 Copying public/ assets')
+  console.log('Copying public/ assets')
   if (fs.existsSync(PUBLIC)) copyDir(PUBLIC, DIST)
 
-  console.log('🎨 Compiling Tailwind CSS')
+  console.log('Compiling Tailwind CSS')
   execSync(
     `npx tailwindcss -c tailwind.config.js -i ./styles.css -o ./dist/styles.css --minify`,
     { stdio: 'inherit', cwd: ROOT }
   )
 
-  console.log('📄 Rendering pages')
+  console.log('Rendering pages')
 
-  // Home
   await buildPage('/', 'home', {
     topResorts: topBy('overall', 3),
     featuredPairs: allComparisonPairs().slice(0, 4),
@@ -134,7 +182,6 @@ async function build() {
     activeNav: '/',
   })
 
-  // All resorts
   await buildPage('/resorts/', 'all-resorts', {
     sortedResorts: topBy('overall', resorts.length),
   }, {
@@ -143,7 +190,6 @@ async function build() {
     activeNav: '/resorts/',
   })
 
-  // Single resort pages
   for (const r of resorts) {
     const related = resorts.filter(o => o.slug !== r.slug && (o.country === r.country || o.type === r.type)).slice(0, 2)
     await buildPage(`/resorts/${r.slug}/`, 'resort', { resort: r, related }, {
@@ -152,7 +198,6 @@ async function build() {
     })
   }
 
-  // Category pages
   const categoryDefs = [
     { slug: 'best-adults-only-all-inclusive-resorts', label: 'Adults-Only', filter: r => r.type === 'adults-only', title: 'Best Adults-Only All-Inclusive Resorts 2025', sub: 'Romantic escapes for couples and adult travelers.' },
     { slug: 'best-family-all-inclusive-resorts', label: 'Family', filter: r => r.type === 'family', title: 'Best Family All-Inclusive Resorts 2025', sub: 'Family-friendly resorts with activities for every age.' },
@@ -170,7 +215,6 @@ async function build() {
     })
   }
 
-  // Destination pages
   for (const c of countries()) {
     const list = byCountry(c.slug).sort((a, b) => b.ratings.overall - a.ratings.overall)
     await buildPage(`/destination/${c.slug}/`, 'destination', { country: c, resortList: list }, {
@@ -179,7 +223,6 @@ async function build() {
     })
   }
 
-  // Compare hub
   await buildPage('/compare/', 'compare-hub', {
     pairs: allComparisonPairs(),
   }, {
@@ -188,7 +231,6 @@ async function build() {
     activeNav: '/compare/',
   })
 
-  // Comparison pair pages
   for (const { a, b } of allComparisonPairs()) {
     const pairSlug = `${a.slug}-vs-${b.slug}`
     await buildPage(`/compare/${pairSlug}/`, 'compare-pair', { a, b }, {
@@ -197,7 +239,6 @@ async function build() {
     })
   }
 
-  // Sitemap
   const urls = [
     '/', '/resorts/', '/compare/',
     ...categoryDefs.map(c => `/${c.slug}/`),
@@ -206,20 +247,11 @@ async function build() {
     ...allComparisonPairs().map(({ a, b }) => `/compare/${a.slug}-vs-${b.slug}/`),
   ]
   const today = new Date().toISOString().split('T')[0]
-  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${urls.map(u => `  <url><loc>${SITE_URL}${u}</loc><lastmod>${today}</lastmod></url>`).join('\n')}
-</urlset>`
+  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(u => `  <url><loc>${SITE_URL}${u}</loc><lastmod>${today}</lastmod></url>`).join('\n')}\n</urlset>`
   fs.writeFileSync(path.join(DIST, 'sitemap.xml'), sitemap, 'utf8')
+  fs.writeFileSync(path.join(DIST, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${SITE_URL}/sitemap.xml\n`, 'utf8')
 
-  // Robots
-  fs.writeFileSync(
-    path.join(DIST, 'robots.txt'),
-    `User-agent: *\nAllow: /\nSitemap: ${SITE_URL}/sitemap.xml\n`,
-    'utf8'
-  )
-
-  console.log(`✅ Built ${urls.length} pages to dist/`)
+  console.log(`Built ${urls.length} pages to dist/`)
 }
 
 build().catch(err => { console.error(err); process.exit(1) })
