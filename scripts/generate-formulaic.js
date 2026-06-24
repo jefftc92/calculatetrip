@@ -13,25 +13,22 @@ const SHARD_SIZE = parseInt(process.env.SHARD_SIZE || '5000', 10)
 const OUT_PREFIX = process.env.OUT_PREFIX || 'formulaic'
 
 const { resorts: legacyResorts, pairOverviews: legacyPairOverviews } = require(path.join(ROOT, 'data', 'resorts'))
-const { newResorts, shouldGeneratePair, LEGACY_SLUGS } = require(path.join(ROOT, 'data', 'resorts-new'))
+const { newResorts, LEGACY_SLUGS } = require(path.join(ROOT, 'data', 'resorts-new'))
 const resorts = [...legacyResorts, ...newResorts]
 
-// ---- load already-done keys ------------------------------------------------
+// ---- load already-done keys -----------------------------------------------
 fs.mkdirSync(SHARD_DIR, { recursive: true })
 const done = new Set(Object.keys(legacyPairOverviews))
 let nextShard = 0
+const PREFIX = process.env.OUT_PREFIX || 'formulaic'
 for (const f of fs.readdirSync(SHARD_DIR).sort()) {
-  const m = f.match(/^shard-(\d+)\.js$/)
-  if (m) { nextShard = Math.max(nextShard, parseInt(m[1], 10) + 1); for (const k of Object.keys(require(path.join(SHARD_DIR, f)))) done.add(k); continue }
-  if (f.endsWith('.js') && f !== 'shard-0000.js') { try { for (const k of Object.keys(require(path.join(SHARD_DIR, f)))) done.add(k) } catch(e){} }
-}
-if (fs.existsSync(PENDING_JSONL)) {
-  for (const line of fs.readFileSync(PENDING_JSONL, 'utf8').split('\n')) {
-    if (!line.trim()) continue
-    try { const { key } = JSON.parse(line); done.add(key) } catch(e){}
-  }
+  const m = f.match(new RegExp(`^${PREFIX}-shard-(\\d+)\\.js$`))
+  if (!m) continue
+  nextShard = Math.max(nextShard, parseInt(m[1], 10) + 1)
+  for (const k of Object.keys(require(path.join(SHARD_DIR, f)))) done.add(k)
 }
 
+// ---- helpers ---------------------------------------------------------------
 const RATING_LABELS = { overall:'Overall',food:'Food',beach:'Beach',pool:'Pool',atmosphere:'Atmosphere',location:'Location',room:'Room',value:'Value',cleanliness:'Cleanliness',service:'Service',sleepQuality:'Sleep Quality' }
 
 function fmt(v) { return v != null ? v.toFixed(1) : 'n/a' }
@@ -100,10 +97,52 @@ function seasonStr(country) {
     'Costa Rica': 'December through April on the Pacific coast (Guanacaste). The Caribbean coast has no true dry season.',
     'Honduras': 'March through May for Bay Islands diving. December through February is also dry and popular.',
     'Belize': 'February through May. Dive visibility peaks in April.',
+    'Haiti': 'December through March. The southern coast is drier than the north.',
+    'Grenada': 'January through May. Grenada sits at the southern edge of the hurricane belt.',
+    'St. Kitts and Nevis': 'January through April.',
+    'Martinique': 'December through May.',
+    'Guadeloupe': 'December through May.',
+    'Puerto Rico': 'December through April. Hurricane season June–November.',
+    'US Virgin Islands': 'December through April.',
+    'Cayman Islands': 'December through April.',
+    'Bonaire': "Year-round. Bonaire is outside the hurricane belt and among the world's best shore-diving destinations.",
+    'Trinidad and Tobago': 'January through May. Tobago sees less tourism than other Caribbean islands, offering uncrowded beaches.',
+    'St. Vincent and the Grenadines': 'December through May.',
+    'Anguilla': 'December through April.',
+    'St. Maarten': 'December through April.',
+    'Bermuda': 'May through October. Unlike the tropical Caribbean, Bermuda is best in summer.',
+    'Colombia': 'December through March and July through August.',
+    'Ecuador': 'June through September.',
+    'Peru': 'May through October (dry season in Andean regions).',
+    'Brazil': 'April through October in the northeast (Bahia, Fortaleza). Rio and the south are best December through March.',
+    'Egypt': 'October through April. Summers are intensely hot.',
+    'Morocco': 'March through May and September through November.',
+    'Tanzania': 'June through October (dry season). Great migration peaks July–August.',
+    'Kenya': 'July through October.',
+    'South Africa': 'November through March for beach resorts on the Indian Ocean coast.',
+    'Mauritius': 'May through December. Cyclone season January–March.',
+    'Maldives': 'November through April (dry northeast monsoon).',
+    'Thailand': 'November through April (west coast Phuket). October through May (east coast Koh Samui).',
+    'Indonesia': 'May through September on Bali and Lombok.',
+    'Philippines': 'November through May.',
+    'Vietnam': 'February through April.',
+    'Malaysia': 'March through October on the east coast; year-round on the west.',
+    'Fiji': 'May through October (dry season).',
+    'Greece': 'June through September.',
+    'Spain': 'May through October.',
+    'Italy': 'May through September.',
+    'Turkey': 'May through October.',
+    'Croatia': 'June through September.',
+    'Portugal': 'June through September.',
+    'France': 'June through September.',
+    'United Arab Emirates': 'November through March. Summers are extremely hot.',
+    'Oman': 'October through April.',
+    'Jordan': 'March through May and September through November.',
   }
   return seasons[country] || 'Check local climate guides for the best time to visit, as weather patterns vary by region and season.'
 }
 
+// ---- formulaic overview builder --------------------------------------------
 function buildOverview(a, b) {
   const gaps = bigGaps(a, b)
   const aTop = topRatings(a)
@@ -118,7 +157,10 @@ function buildOverview(a, b) {
   const bAmen = amenityHighlights(b)
   const sameCountry = a.country === b.country
 
+  // --- keyDifferences (~175 words) ---
   let kd = ''
+
+  // Opening: location + overall score
   const aOverall = fmt(a.ratings.overall), bOverall = fmt(b.ratings.overall)
   kd += `${a.name} (${aLoc}, overall ${aOverall}) and ${b.name} (${bLoc}, overall ${bOverall}) `
   if (!sameCountry) {
@@ -128,6 +170,8 @@ function buildOverview(a, b) {
   } else {
     kd += `are both ${a.country} all-inclusives that compete for a similar traveller. `
   }
+
+  // Rating gaps
   if (gaps.length > 0) {
     const g = gaps[0]
     const winner = g.diff > 0 ? a.name : b.name
@@ -144,15 +188,26 @@ function buildOverview(a, b) {
     const loseVal = g.diff > 0 ? g.bv : g.av
     kd += `${winner} also leads on ${RATING_LABELS[g.k]||g.k} (${fmt(winVal)} vs ${fmt(loseVal)}). `
   }
+
+  // Strengths
   kd += `${a.name} scores highest in ${aTop.join(', ')}; its weakest ratings are ${aWeak.join(' and ')}. `
   kd += `${b.name}'s strongest scores are ${bTop.join(', ')}, with ${bWeak.join(' and ')} as relative weak spots. `
-  if (aPrice || bPrice) {
-    if (aPrice === bPrice) { kd += `Both are ${aPrice||'similarly priced'} properties. ` }
-    else if (aPrice && bPrice) { kd += `Price-wise, ${a.name} is ${aPrice} while ${b.name} is ${bPrice}. ` }
-    else { kd += `${aPrice ? a.name + ' is ' + aPrice : b.name + ' is ' + bPrice}. ` }
-  }
-  if (a.type !== b.type) { kd += `${a.name} is ${a.type.replace('-',' ')}, while ${b.name} is ${b.type.replace('-',' ')}. ` }
 
+  // Price + type
+  if (aPrice || bPrice) {
+    if (aPrice === bPrice) {
+      kd += `Both are ${aPrice||'similarly priced'} properties. `
+    } else if (aPrice && bPrice) {
+      kd += `Price-wise, ${a.name} is ${aPrice} while ${b.name} is ${bPrice}. `
+    } else {
+      kd += `${aPrice ? a.name + ' is ' + aPrice : b.name + ' is ' + bPrice}. `
+    }
+  }
+  if (a.type !== b.type) {
+    kd += `${a.name} is ${a.type.replace('-',' ')}, while ${b.name} is ${b.type.replace('-',' ')}. `
+  }
+
+  // --- whoShouldChooseA (~60 words) ---
   let wA = `${a.name} suits `
   if (a.type === 'adults-only') wA += 'couples and adult travellers '
   else if (a.type === 'family') wA += 'families with children '
@@ -162,6 +217,7 @@ function buildOverview(a, b) {
   if (aAmen.length) wA += `it offers ${aAmen.slice(0,3).join(', ')}. `
   wA += `Best for guests where ${aTop[0]||'overall experience'} is the primary deciding factor.`
 
+  // --- whoShouldChooseB (~60 words) ---
   let wB = `${b.name} suits `
   if (b.type === 'adults-only') wB += 'couples and adult travellers '
   else if (b.type === 'family') wB += 'families with children '
@@ -171,13 +227,20 @@ function buildOverview(a, b) {
   if (bAmen.length) wB += `it offers ${bAmen.slice(0,3).join(', ')}. `
   wB += `Best for guests where ${bTop[0]||'overall experience'} is the primary deciding factor.`
 
+  // --- whenToVisit (~75 words) ---
   let when = ''
-  if (sameCountry) { when = `Both resorts are in ${a.country}. ${seasonStr(a.country)}` }
-  else { when = `${a.name} is in ${a.country}: ${seasonStr(a.country)} ${b.name} is in ${b.country}: ${seasonStr(b.country)}` }
+  if (sameCountry) {
+    when = `Both resorts are in ${a.country}. ${seasonStr(a.country)}`
+  } else {
+    when = `${a.name} is in ${a.country}: ${seasonStr(a.country)} ${b.name} is in ${b.country}: ${seasonStr(b.country)}`
+  }
 
+  // --- activities (~75 words) ---
   const allAmen = [...new Set([...aAmen, ...bAmen])].slice(0, 6)
   let acts = ''
-  if (aAmen.length || bAmen.length) { acts += `Between the two resorts, on-site activities include ${allAmen.join(', ')}. ` }
+  if (aAmen.length || bAmen.length) {
+    acts += `Between the two resorts, on-site activities include ${allAmen.join(', ')}. `
+  }
   acts += `${a.name} in ${aLoc} `
   acts += a.country !== 'Maldives' && a.country !== 'Fiji' ? `offers access to local excursions and watersports typical of ${a.country}. ` : `is a remote overwater destination focused on snorkelling, diving, and reef exploration. `
   acts += `${b.name} in ${bLoc} `
@@ -186,12 +249,12 @@ function buildOverview(a, b) {
   return { keyDifferences: kd.trim(), whoShouldChooseA: wA.trim(), whoShouldChooseB: wB.trim(), whenToVisit: when.trim(), activities: acts.trim() }
 }
 
+// ---- main ------------------------------------------------------------------
 function allPairs() {
   const pairs = []
   for (let i = 0; i < resorts.length; i++)
     for (let j = i + 1; j < resorts.length; j++) {
       const x = resorts[i], y = resorts[j]
-      if (!shouldGeneratePair(x, y)) continue
       if (LEGACY_SLUGS.has(x.slug) && LEGACY_SLUGS.has(y.slug)) continue
       const [a, b] = x.slug < y.slug ? [x, y] : [y, x]
       const key = `${a.slug}-vs-${b.slug}`
@@ -207,7 +270,10 @@ console.log(`Remaining: ${pending.length} | nextShard: ${nextShard}`)
 const results = {}
 const unsharded = []
 
-function record(key, value) { results[key] = value; unsharded.push(key) }
+function record(key, value) {
+  results[key] = value
+  unsharded.push(key)
+}
 
 function maybeFlush(final) {
   while (unsharded.length >= SHARD_SIZE || (final && unsharded.length > 0)) {
