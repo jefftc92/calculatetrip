@@ -252,8 +252,9 @@ async function build() {
     activeNav: '/compare/',
   })
 
-  // Build a page for every pair that has overview content (includes cross-country pairs)
-  for (const { a, b } of allComparisonPairs()) {
+  // Pre-build popular compare pages (same-brand/country). All other pairs
+  // are served dynamically by serve.js so the build stays fast.
+  for (const { a, b } of popularPairs()) {
     const pairSlug = `${a.slug}-vs-${b.slug}`
     await buildPage(`/compare/${pairSlug}/`, 'compare-pair', { a, b }, {
       title: `${a.name} vs ${b.name} 2025 | Resort Comparison | ${SITE_NAME}`,

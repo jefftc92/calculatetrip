@@ -48,6 +48,6 @@ args = "PORT=24605 node serve.js"
 waitForPort = 24605
 
 [deployment]
-deploymentTarget = "static"
-publicDir = "dist"
+deploymentTarget = "autoscale"
 build = ["sh", "-c", "npm install && npm run build"]
+run = ["node", "serve.js"]
