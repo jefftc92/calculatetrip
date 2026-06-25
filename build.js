@@ -51,7 +51,27 @@ function countries() {
     .filter(r => { if (seen.has(r.countrySlug)) return false; seen.add(r.countrySlug); return true })
     .map(r => ({ name: r.country, slug: r.countrySlug, count: byCountry(r.countrySlug).length }))
 }
+
+// Pairs with pairOverview content — used for building comparison pages and sitemap.
+// Includes all cross-country pairs once shard files are merged.
+let _allPairs = null
 function allComparisonPairs() {
+  if (_allPairs) return _allPairs
+  _allPairs = []
+  for (let i = 0; i < resorts.length; i++) {
+    for (let j = i + 1; j < resorts.length; j++) {
+      const x = resorts[i], y = resorts[j]
+      const [a, b] = x.slug < y.slug ? [x, y] : [y, x]
+      const key = `${a.slug}-vs-${b.slug}`
+      if (pairOverviews[key]) _allPairs.push({ a, b })
+    }
+  }
+  return _allPairs
+}
+
+// Pairs to feature on the compare hub page (filtered to same-brand/country pairs
+// to keep the pre-rendered list manageable).
+function popularPairs() {
   const pairs = []
   for (let i = 0; i < resorts.length; i++) {
     for (let j = i + 1; j < resorts.length; j++) {
@@ -116,7 +136,7 @@ const RATING_TOOLTIPS = {
   food:         'Reflects restaurant quality, variety, and the all-inclusive meal program. AI-analyzed from verified guest reviews.',
   beach:        'Rates sand condition, water clarity, and beach environment. Resorts without a traditional beach show no score.',
   pool:         'Reflects pool quality, design, and guest satisfaction. AI-analyzed from verified guest reviews.',
-  atmosphere:   'Captures overall ambiance, vibe, and setting -- including landscaping, communal areas, and resort energy.',
+  atmosphere:   'Captures overall ambiance, vibe, and setting — including landscaping, communal areas, and resort energy.',
   location:     'Rates the resort\'s setting, scenery, and surrounding environment.',
   room:         'Reflects room size, comfort, furnishings, and overall quality as reported by guests.',
   value:        'Scores the all-inclusive package value relative to price paid, as reported by guests.',
@@ -175,7 +195,7 @@ async function build() {
 
   await buildPage('/', 'home', {
     topResorts: topBy('overall', 3),
-    featuredPairs: allComparisonPairs().slice(0, 4),
+    featuredPairs: popularPairs().slice(0, 4),
   }, {
     title: `Best All-Inclusive Resorts 2025 | Independent Ratings | ${SITE_NAME}`,
     description: 'Independent ratings for the best all-inclusive resorts across the Caribbean and Latin America. Compare by food, beach, pool, value, and service.',
@@ -223,14 +243,16 @@ async function build() {
     })
   }
 
+  // Compare hub shows a curated popular list, not all 383K pairs
   await buildPage('/compare/', 'compare-hub', {
-    pairs: allComparisonPairs(),
+    pairs: popularPairs(),
   }, {
     title: `Compare All-Inclusive Resorts 2025 | Side-by-Side | ${SITE_NAME}`,
     description: 'Compare any two all-inclusive resorts side by side. Ratings for food, beach, pool, value, service, and amenities.',
     activeNav: '/compare/',
   })
 
+  // Build a page for every pair that has overview content (includes cross-country pairs)
   for (const { a, b } of allComparisonPairs()) {
     const pairSlug = `${a.slug}-vs-${b.slug}`
     await buildPage(`/compare/${pairSlug}/`, 'compare-pair', { a, b }, {
