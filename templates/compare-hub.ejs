@@ -25,7 +25,7 @@
         <div class="space-y-2">
           <select id="country-a" class="w-full font-sans text-sm bg-white border border-ocean-200 text-ocean-900 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-ocean-500">
             <option value="">Select country</option>
-            <% [...new Set(resorts.map(r => r.country))].sort().forEach(c => { %>
+            <% [...new Set(resorts.map(r => r.country))].filter(c => c).sort().forEach(c => { %>
               <option value="<%= c %>"><%= c %></option>
             <% }) %>
           </select>
@@ -54,7 +54,7 @@
         <div class="space-y-2">
           <select id="country-b" class="w-full font-sans text-sm bg-white border border-ocean-200 text-ocean-900 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-ocean-500">
             <option value="">Select country</option>
-            <% [...new Set(resorts.map(r => r.country))].sort().forEach(c => { %>
+            <% [...new Set(resorts.map(r => r.country))].filter(c => c).sort().forEach(c => { %>
               <option value="<%= c %>"><%= c %></option>
             <% }) %>
           </select>
