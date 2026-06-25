@@ -252,15 +252,9 @@ async function build() {
     activeNav: '/compare/',
   })
 
-  // Pre-build popular compare pages (same-brand/country). All other pairs
-  // are served dynamically by serve.js so the build stays fast.
-  for (const { a, b } of popularPairs()) {
-    const pairSlug = `${a.slug}-vs-${b.slug}`
-    await buildPage(`/compare/${pairSlug}/`, 'compare-pair', { a, b }, {
-      title: `${a.name} vs ${b.name} 2025 | Resort Comparison | ${SITE_NAME}`,
-      description: `Detailed comparison of ${a.name} (${a.ratings.overall}/10) and ${b.name} (${b.ratings.overall}/10). Side-by-side ratings, amenities, and editorial verdict.`,
-    })
-  }
+  // Compare pages are all served dynamically by serve.js on-demand.
+  // Pre-building them would generate thousands of large files (5+ GB)
+  // and blow the deployment disk quota. serve.js handles them via EJS.
 
   const urls = [
     '/', '/resorts/', '/compare/',
