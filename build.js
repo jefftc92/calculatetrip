@@ -245,7 +245,7 @@ async function build() {
 
   // Compare hub shows a curated popular list, not all 383K pairs
   await buildPage('/compare/', 'compare-hub', {
-    pairs: popularPairs().slice(0, 100),
+    pairs: popularPairs(),
   }, {
     title: `Compare All-Inclusive Resorts 2025 | Side-by-Side | ${SITE_NAME}`,
     description: 'Compare any two all-inclusive resorts side by side. Ratings for food, beach, pool, value, service, and amenities.',
