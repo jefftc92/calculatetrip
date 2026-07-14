@@ -245,21 +245,16 @@ async function build() {
 
   // Compare hub shows a curated popular list, not all 383K pairs
   await buildPage('/compare/', 'compare-hub', {
-    pairs: popularPairs(),
+    pairs: popularPairs().slice(0, 100),
   }, {
     title: `Compare All-Inclusive Resorts 2025 | Side-by-Side | ${SITE_NAME}`,
     description: 'Compare any two all-inclusive resorts side by side. Ratings for food, beach, pool, value, service, and amenities.',
     activeNav: '/compare/',
   })
 
-  // Build a page for every pair that has overview content (includes cross-country pairs)
-  for (const { a, b } of allComparisonPairs()) {
-    const pairSlug = `${a.slug}-vs-${b.slug}`
-    await buildPage(`/compare/${pairSlug}/`, 'compare-pair', { a, b }, {
-      title: `${a.name} vs ${b.name} 2025 | Resort Comparison | ${SITE_NAME}`,
-      description: `Detailed comparison of ${a.name} (${a.ratings.overall}/10) and ${b.name} (${b.ratings.overall}/10). Side-by-side ratings, amenities, and editorial verdict.`,
-    })
-  }
+  // Compare pages are all served dynamically by serve.js on-demand.
+  // Pre-building them would generate thousands of large files (5+ GB)
+  // and blow the deployment disk quota. serve.js handles them via EJS.
 
   const urls = [
     '/', '/resorts/', '/compare/',

@@ -1,18 +1,16 @@
 #!/usr/bin/env node
-// Batch generator for resort-pair "key differences" editorial overviews.
+// Batch generator for resort-pair editorial overviews.
 //
-// Generates bespoke prose for new comparison pairs, matching the voice of the
-// existing hand-authored entries in data/resorts.js. Runs in resumable batches
-// (default 5,000 pairs per run) and writes sharded output to
-// data/pair-overviews/shard-NNNN.js. build.js merges all shards into
-// pairOverviews. Existing legacy overviews are never touched.
+// Matches the voice of existing hand-authored entries in data/resorts.js.
+// Runs in resumable batches (default 5,000 pairs/run) and writes sharded
+// output to data/pair-overviews/shard-NNNN.js. build.js merges all shards
+// on top of the untouched legacy pairOverviews.
 //
 // Usage:
 //   ANTHROPIC_API_KEY=sk-... node scripts/generate-pair-overviews.js
 //   ANTHROPIC_API_KEY=sk-... BATCH_SIZE=5000 MODEL=claude-sonnet-4-6 node scripts/generate-pair-overviews.js
 //
-// Re-run repeatedly: each run skips pairs already present in legacy
-// pairOverviews or in previously written shards, and processes the next batch.
+// Re-running skips already-completed pairs and processes the next batch.
 
 const fs = require('fs')
 const path = require('path')
@@ -26,17 +24,10 @@ const CONCURRENCY = parseInt(process.env.CONCURRENCY || '12', 10)
 const API_KEY = process.env.ANTHROPIC_API_KEY
 const API_URL = (process.env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com') + '/v1/messages'
 
-if (!API_KEY) {
-  console.error('ERROR: set ANTHROPIC_API_KEY in the environment.')
-  process.exit(1)
-}
+if (!API_KEY) { console.error('ERROR: set ANTHROPIC_API_KEY'); process.exit(1) }
 
-// ---------------------------------------------------------------------------
-// Load data + pairing logic
-// ---------------------------------------------------------------------------
 const { resorts: legacyResorts, pairOverviews: legacyPairOverviews } = require(path.join(ROOT, 'data', 'resorts'))
 const { newResorts, shouldGeneratePair } = require(path.join(ROOT, 'data', 'resorts-new'))
-
 const resorts = [...legacyResorts, ...newResorts]
 
 function allPairs() {
@@ -52,9 +43,6 @@ function allPairs() {
   return pairs
 }
 
-// ---------------------------------------------------------------------------
-// Which keys are already done (legacy overviews + existing shards)
-// ---------------------------------------------------------------------------
 function loadDoneKeys() {
   const done = new Set(Object.keys(legacyPairOverviews))
   let maxShard = -1
@@ -70,20 +58,17 @@ function loadDoneKeys() {
   return { done, nextShard: maxShard + 1 }
 }
 
-// ---------------------------------------------------------------------------
-// Few-shot exemplars pulled from the richest legacy overviews
-// ---------------------------------------------------------------------------
 function pickExemplars(n = 2) {
-  const entries = Object.entries(legacyPairOverviews)
+  return Object.entries(legacyPairOverviews)
     .filter(([, v]) => v && v.keyDifferences && v.keyDifferences.length > 120)
-    .sort((a, b) => (b[1].keyDifferences.length) - (a[1].keyDifferences.length))
-  return entries.slice(0, n).map(([key, v]) => ({ key, v }))
+    .sort((a, b) => b[1].keyDifferences.length - a[1].keyDifferences.length)
+    .slice(0, n).map(([, v]) => v)
 }
 
 function fmtRatings(r) {
   return Object.entries(r)
-    .filter(([, val]) => val !== null && val !== undefined)
-    .map(([k, val]) => `${k}: ${val}`).join(', ')
+    .filter(([, v]) => v !== null && v !== undefined)
+    .map(([k, v]) => `${k}: ${v}`).join(', ')
 }
 
 function resortBlurb(r) {
@@ -94,7 +79,7 @@ function resortBlurb(r) {
     `Type: ${r.type}`,
     r.ageNote ? `Age policy: ${r.ageNote}` : null,
     r.priceLevel ? `Price level: ${r.priceLevel}` : null,
-    `Ratings — ${fmtRatings(r.ratings)}`,
+    `Ratings -- ${fmtRatings(r.ratings)}`,
     r.amenities && r.amenities.length ? `Amenities: ${r.amenities.join(', ')}` : null,
   ].filter(Boolean).join('\n')
 }
@@ -102,7 +87,7 @@ function resortBlurb(r) {
 const EXEMPLARS = pickExemplars(2)
 
 function buildPrompt(a, b) {
-  const exampleText = EXEMPLARS.map(({ v }) => JSON.stringify({
+  const examples = EXEMPLARS.map(v => JSON.stringify({
     keyDifferences: v.keyDifferences,
     whoShouldChooseA: v.whoShouldChooseA,
     whoShouldChooseB: v.whoShouldChooseB,
@@ -110,44 +95,17 @@ function buildPrompt(a, b) {
     activities: v.activities,
   }, null, 2)).join('\n\n')
 
-  return `You are a discerning all-inclusive resort editor. Write a side-by-side comparison for two resorts in the same voice as the examples below: analytical, specific, grounded in the actual rating numbers and attributes, never marketing fluff. Resort A is "${a.name}" and Resort B is "${b.name}".
+  return `You are a discerning all-inclusive resort editor. Write a side-by-side comparison in the same voice as the examples: analytical, specific, grounded in actual ratings, never marketing copy. Resort A is "${a.name}", Resort B is "${b.name}".
 
-RESORT A
-${resortBlurb(a)}
-
-RESORT B
-${resortBlurb(b)}
-
-Write these fields:
-- keyDifferences: 150-200 words contrasting the two, citing specific rating gaps and attribute differences.
-- whoShouldChooseA: 50-75 words on the ideal guest for Resort A.
-- whoShouldChooseB: 50-75 words on the ideal guest for Resort B.
-- whenToVisit: ~75 words on timing for these destinations.
-- activities: ~75 words on what guests can do at/near both.
-
-Match the style of these existing examples:
-${exampleText}
-
-Respond with ONLY a JSON object with exactly those five string keys. No markdown, no commentary.`
+RESORT A\n${resortBlurb(a)}\n\nRESORT B\n${resortBlurb(b)}\n\nWrite:\n- keyDifferences: 150-200 words contrasting the two, citing specific rating gaps.\n- whoShouldChooseA: 50-75 words on the ideal guest for A.\n- whoShouldChooseB: 50-75 words on the ideal guest for B.\n- whenToVisit: ~75 words on timing.\n- activities: ~75 words on what guests can do at/near both.\n\nExisting style examples:\n${examples}\n\nRespond with ONLY a JSON object with those five string keys.`
 }
 
-// ---------------------------------------------------------------------------
-// API call with retry
-// ---------------------------------------------------------------------------
 async function callModel(prompt, attempt = 0) {
   try {
     const res = await fetch(API_URL, {
       method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'x-api-key': API_KEY,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 1200,
-        messages: [{ role: 'user', content: prompt }],
-      }),
+      headers: { 'content-type': 'application/json', 'x-api-key': API_KEY, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model: MODEL, max_tokens: 1200, messages: [{ role: 'user', content: prompt }] }),
     })
     if (!res.ok) {
       if ((res.status === 429 || res.status >= 500) && attempt < 5) {
@@ -158,8 +116,7 @@ async function callModel(prompt, attempt = 0) {
     }
     const data = await res.json()
     const text = (data.content || []).map(c => c.text || '').join('').trim()
-    const json = text.replace(/^```(?:json)?\s*|\s*```$/g, '')
-    return JSON.parse(json)
+    return JSON.parse(text.replace(/^```(?:json)?\s*|\s*```$/g, ''))
   } catch (e) {
     if (attempt < 5) { await sleep(2000 * Math.pow(2, attempt)); return callModel(prompt, attempt + 1) }
     throw e
@@ -168,19 +125,16 @@ async function callModel(prompt, attempt = 0) {
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
 
-// ---------------------------------------------------------------------------
-// Main
-// ---------------------------------------------------------------------------
 async function main() {
   fs.mkdirSync(SHARD_DIR, { recursive: true })
   const { done, nextShard } = loadDoneKeys()
   const pending = allPairs().filter(p => !done.has(p.key))
   const batch = pending.slice(0, BATCH_SIZE)
 
-  console.log(`Total candidate pairs: ${done.size + pending.length}`)
+  console.log(`Total pairs: ${done.size + pending.length}`)
   console.log(`Already done: ${done.size}`)
   console.log(`Remaining: ${pending.length}`)
-  console.log(`This run will generate: ${batch.length} (shard-${String(nextShard).padStart(4, '0')})`)
+  console.log(`This run: ${batch.length} -> shard-${String(nextShard).padStart(4, '0')}`)
   if (!batch.length) { console.log('Nothing to do.'); return }
 
   const result = {}
@@ -189,20 +143,15 @@ async function main() {
     while (i < batch.length) {
       const idx = i++
       const { a, b, key } = batch[idx]
-      try {
-        result[key] = await callModel(buildPrompt(a, b))
-        ok++
-      } catch (e) {
-        fail++
-        console.error(`  FAILED ${key}: ${e.message}`)
-      }
-      if ((ok + fail) % 100 === 0) console.log(`  ...${ok + fail}/${batch.length} (ok=${ok} fail=${fail})`)
+      try { result[key] = await callModel(buildPrompt(a, b)); ok++ }
+      catch (e) { fail++; console.error(`  FAILED ${key}: ${e.message}`) }
+      if ((ok + fail) % 100 === 0) console.log(`  ${ok + fail}/${batch.length} (ok=${ok} fail=${fail})`)
     }
   }
   await Promise.all(Array.from({ length: CONCURRENCY }, worker))
 
   const shardFile = path.join(SHARD_DIR, `shard-${String(nextShard).padStart(4, '0')}.js`)
-  fs.writeFileSync(shardFile, `// Auto-generated pair overviews. Do not edit by hand.\nmodule.exports = ${JSON.stringify(result, null, 2)}\n`)
+  fs.writeFileSync(shardFile, `// Auto-generated. Do not edit by hand.\nmodule.exports = ${JSON.stringify(result, null, 2)}\n`)
   console.log(`Wrote ${Object.keys(result).length} overviews to ${path.relative(ROOT, shardFile)} (ok=${ok} fail=${fail})`)
 }
 

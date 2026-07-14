@@ -7,7 +7,7 @@ const fs = require('fs')
 const path = require('path')
 
 const DATA_FILE = path.join(__dirname, '..', 'data', 'resorts.js')
-const PROSE_FILES = [1, 2, 3, 4, 5].map(n => `/tmp/prose-${n}.json`)
+const PROSE_FILES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(n => `/tmp/prose-${n}.json`)
 
 const prose = {}
 for (const f of PROSE_FILES) {

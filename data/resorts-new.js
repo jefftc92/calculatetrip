@@ -1,9 +1,13 @@
 // New-resort ingestion + comparison-grouping logic.
 //
-// Parses data/resorts-extra.csv (the full ~885-row dataset) at load time,
+// Parses data/resorts-extra-{1..4}.csv (the full ~885-row dataset) at load time,
 // skips the 125 resorts already hand-authored in data/resorts.js, and emits
 // the remaining resorts plus the helpers build.js uses to decide which
 // resort pairs deserve a comparison page.
+//
+// CSV columns (20 total, no Address column):
+//   0=Name 1=AffiliateLink 2=PriceLevel 3=AvgRating 4-13=Ratings
+//   14=Country 15=Area 16=Airport 17=FamilyAdults 18=Notes 19=Amenities
 //
 // A pair gets a comparison page when:
 //   - both resorts are legacy (already true in the original data), OR
@@ -14,12 +18,9 @@ const fs = require('fs')
 const path = require('path')
 
 // ---------------------------------------------------------------------------
-// Mexico nearby-city corridors. Resorts in the same corridor are treated as
-// cross-shoppable; resorts in different corridors are not paired.
+// Mexico nearby-city corridors.
 // ---------------------------------------------------------------------------
 const MEXICO_ZONES = {
-  // Cancun + Riviera Maya (one corridor — they are a ~45-60 min drive apart
-  // and travelers routinely cross-shop them).
   'Cancun': 'cancun-riviera-maya',
   'Costa Mujeres': 'cancun-riviera-maya',
   'Playa Mujeres': 'cancun-riviera-maya',
@@ -44,13 +45,9 @@ const MEXICO_ZONES = {
   'Xpu-Ha': 'cancun-riviera-maya',
   'Cozumel': 'cancun-riviera-maya',
   'Riviera Maya': 'cancun-riviera-maya',
-
-  // Los Cabos
   'Cabo San Lucas': 'los-cabos',
   'San Jose del Cabo': 'los-cabos',
   'Los Cabos': 'los-cabos',
-
-  // Puerto Vallarta / Riviera Nayarit
   'Puerto Vallarta': 'puerto-vallarta',
   'Nuevo Vallarta': 'puerto-vallarta',
   'Nuevo Nayarit': 'puerto-vallarta',
@@ -63,9 +60,6 @@ const MEXICO_ZONES = {
   'Rincon de Guayabitos': 'puerto-vallarta',
 }
 
-// Any Mexico area not listed above falls back to its own area name (so it only
-// pairs with resorts in the exact same area). Blank areas are inferred from the
-// resort name where possible (handles the ~19 rows with an empty area column).
 function inferZoneFromName(name) {
   const n = name.toLowerCase()
   if (/cancun|costa mujeres|isla mujeres|puerto morelos/.test(n)) return 'cancun-riviera-maya'
@@ -86,12 +80,11 @@ function getMexicoZone(area, name) {
     if (inferred) return inferred
     return 'mexico-other'
   }
-  return area // its own single-area zone
+  return area
 }
 
 // ---------------------------------------------------------------------------
-// Company inference from resort name. Keyword → canonical company.
-// Order matters: earlier, more-specific patterns win.
+// Company inference from resort name.
 // ---------------------------------------------------------------------------
 const COMPANY_RULES = [
   [/\bbeaches\b/i, 'Sandals'],
@@ -159,11 +152,11 @@ function inferCompany(name) {
 }
 
 // ---------------------------------------------------------------------------
-// Slug + value helpers
+// Helpers
 // ---------------------------------------------------------------------------
 function slugify(name) {
   return name
-    .normalize('NFD').replace(/[̀-ͯ]/g, '') // strip accents
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
     .toLowerCase()
     .replace(/[°ºª]/g, '')
     .replace(/&/g, ' and ')
@@ -179,25 +172,18 @@ function num(v) {
   return Number.isFinite(f) ? f : null
 }
 
-function countrySlug(country) {
-  return slugify(country || 'unknown')
-}
+function countrySlugFn(country) { return slugify(country || 'unknown') }
 
 function typeOf(raw) {
-  const s = (raw || '').toLowerCase()
-  if (s.includes('adult')) return 'adults-only'
-  return 'family'
+  return (raw || '').toLowerCase().includes('adult') ? 'adults-only' : 'family'
 }
 
 // ---------------------------------------------------------------------------
-// Minimal CSV parser (RFC-4180-ish: handles quoted fields, escaped quotes,
-// commas and newlines inside quotes).
+// Minimal RFC-4180-ish CSV parser
 // ---------------------------------------------------------------------------
 function parseCSV(text) {
   const rows = []
-  let row = []
-  let field = ''
-  let inQuotes = false
+  let row = [], field = '', inQuotes = false
   for (let i = 0; i < text.length; i++) {
     const c = text[i]
     if (inQuotes) {
@@ -209,7 +195,7 @@ function parseCSV(text) {
       if (c === '"') inQuotes = true
       else if (c === ',') { row.push(field); field = '' }
       else if (c === '\n') { row.push(field); rows.push(row); row = []; field = '' }
-      else if (c === '\r') { /* ignore */ }
+      else if (c === '\r') { /* skip */ }
       else field += c
     }
   }
@@ -218,101 +204,84 @@ function parseCSV(text) {
 }
 
 // ---------------------------------------------------------------------------
-// Build the new-resort list from the CSV, skipping legacy slugs.
+// Load legacy resorts and build new-resort list from CSV parts
 // ---------------------------------------------------------------------------
 const { resorts: legacyResorts } = require('./resorts')
 const LEGACY_SLUGS = new Set(legacyResorts.map(r => r.slug))
 const LEGACY_NAMES = new Set(legacyResorts.map(r => r.name.toLowerCase().trim()))
 
-const CSV_PATH = path.join(__dirname, 'resorts-extra.csv')
+// CSV columns (20 total): 0=Name 1=AffiliateLink 2=PriceLevel 3=AvgRating
+// 4=Food 5=Beach 6=Pool 7=Atmosphere 8=Location 9=Room 10=Value
+// 11=Cleanliness 12=Service 13=SleepQuality 14=Country
+// 15=Area 16=Airport 17=FamilyAdults 18=Notes 19=Amenities
+const CSV_PARTS = [1, 2, 3, 4].map(n =>
+  path.join(__dirname, `resorts-extra-${n}.csv`)
+)
 
 function buildNewResorts() {
-  if (!fs.existsSync(CSV_PATH)) return []
-  const rows = parseCSV(fs.readFileSync(CSV_PATH, 'utf8'))
-  const out = []
-  const seen = new Set()
-  for (const cols of rows) {
-    if (cols.length < 19) continue
-    const name = (cols[0] || '').trim()
-    if (!name || /resort name/i.test(name) || /adults only/i.test(name)) continue // header rows
-    const slug = slugify(name)
-    if (!slug) continue
-    if (LEGACY_SLUGS.has(slug) || LEGACY_NAMES.has(name.toLowerCase().trim())) continue // already authored
-    if (seen.has(slug)) continue
-    seen.add(slug)
-
-    const country = (cols[14] || '').trim()
-    const area = (cols[16] || '').trim()
-    const ratings = {
-      overall: num(cols[3]), food: num(cols[4]), beach: num(cols[5]), pool: num(cols[6]),
-      atmosphere: num(cols[7]), location: num(cols[8]), room: num(cols[9]), value: num(cols[10]),
-      cleanliness: num(cols[11]), service: num(cols[12]), sleepQuality: num(cols[13]),
+  const out = [], seen = new Set()
+  for (const csvPath of CSV_PARTS) {
+    if (!fs.existsSync(csvPath)) continue
+    const rows = parseCSV(fs.readFileSync(csvPath, 'utf8'))
+    for (const cols of rows) {
+      if (cols.length < 18) continue
+      const name = (cols[0] || '').trim()
+      if (!name || /resort name/i.test(name) || /^adults only$/i.test(name)) continue
+      const slug = slugify(name)
+      if (!slug) continue
+      if (LEGACY_SLUGS.has(slug) || LEGACY_NAMES.has(name.toLowerCase().trim())) continue
+      if (seen.has(slug)) continue
+      seen.add(slug)
+      const country = (cols[14] || '').trim()
+      const area = (cols[15] || '').trim()
+      out.push({
+        slug, name, country,
+        countrySlug: countrySlugFn(country),
+        area,
+        airport: (cols[16] || '').trim(),
+        type: typeOf(cols[17]),
+        ageNote: (cols[18] || '').trim() || null,
+        priceLevel: (cols[2] || '').trim() || null,
+        notes: null,
+        description: '', heroTagline: '', whatYouNeedToKnow: '', bestTimeToVisit: '', activities: '',
+        amenities: (cols[19] || '').split(',').map(s => s.trim()).filter(Boolean),
+        agodaLink: (cols[1] || '').trim(),
+        ratings: {
+          overall: num(cols[3]), food: num(cols[4]), beach: num(cols[5]), pool: num(cols[6]),
+          atmosphere: num(cols[7]), location: num(cols[8]), room: num(cols[9]), value: num(cols[10]),
+          cleanliness: num(cols[11]), service: num(cols[12]), sleepQuality: num(cols[13]),
+        },
+      })
     }
-    const amenities = (cols[20] || '').split(',').map(s => s.trim()).filter(Boolean)
-
-    out.push({
-      slug,
-      name,
-      country,
-      countrySlug: countrySlug(country),
-      area,
-      airport: (cols[17] || '').trim(),
-      type: typeOf(cols[18]),
-      ageNote: (cols[19] || '').trim() || null,
-      priceLevel: (cols[2] || '').trim() || null,
-      notes: null,
-      // Editorial prose is generated separately; provide safe fallbacks so
-      // resort detail pages render until enriched.
-      description: '',
-      heroTagline: '',
-      whatYouNeedToKnow: '',
-      bestTimeToVisit: '',
-      activities: '',
-      amenities,
-      agodaLink: (cols[1] || '').trim(),
-      ratings,
-    })
   }
   return out
 }
 
 const newResorts = buildNewResorts()
 
-// COMPANY_MAP covers both new and (where relevant) legacy resorts so that
-// same-company cross-location pairs can be detected across both sets.
+// Build company map across all resorts (legacy + new)
 const COMPANY_MAP = {}
 for (const r of [...legacyResorts, ...newResorts]) {
   const c = inferCompany(r.name)
   if (c) COMPANY_MAP[r.slug] = c
 }
 
-function companyOf(slug) { return COMPANY_MAP[slug] || null }
-
 function zoneOf(r) {
   return r.country === 'Mexico' ? getMexicoZone(r.area, r.name) : null
 }
 
 function shouldGeneratePair(a, b) {
-  // Preserve every pre-existing legacy comparison.
   if (LEGACY_SLUGS.has(a.slug) && LEGACY_SLUGS.has(b.slug)) return true
-  // Same company, any location.
-  const ac = companyOf(a.slug), bc = companyOf(b.slug)
+  const ac = COMPANY_MAP[a.slug], bc = COMPANY_MAP[b.slug]
   if (ac && bc && ac === bc) return true
-  // Different countries (and not same company) → no page.
   if (a.country !== b.country) return false
-  // Same country: Mexico requires the same nearby-city corridor.
   if (a.country === 'Mexico') return zoneOf(a) === zoneOf(b)
   return true
 }
 
-// pairOverviews for new pairs are generated into data/pair-overviews/ shards
-// and merged in build.js. This module ships an empty object so build.js can
-// spread it unconditionally.
-const newPairOverviews = {}
-
 module.exports = {
   newResorts,
-  newPairOverviews,
+  newPairOverviews: {},
   COMPANY_MAP,
   getMexicoZone,
   inferCompany,
