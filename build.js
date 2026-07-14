@@ -254,6 +254,22 @@ async function build() {
     })
   }
 
+  // Shared dataset for the compare picker, written once and fetched by
+  // compare-pair.js. Previously this array was inlined into every compare
+  // page (~1.5MB × 59k pages); serving it as one cached file keeps the
+  // build — and each page — small.
+  const pairData = {
+    resorts: resorts.map(r => ({
+      slug: r.slug, name: r.name, country: r.country, area: r.area, type: r.type,
+      priceLevel: r.priceLevel || null, ageNote: r.ageNote || null, notes: r.notes || null,
+      ratings: r.ratings, amenities: r.amenities, agodaLink: r.agodaLink,
+      whatYouNeedToKnow: r.whatYouNeedToKnow,
+      bestTimeToVisit: r.bestTimeToVisit,
+      activities: r.activities,
+    })),
+  }
+  fs.writeFileSync(path.join(DIST, 'pair-data.json'), JSON.stringify(pairData), 'utf8')
+
   const urls = [
     '/', '/resorts/', '/compare/',
     ...categoryDefs.map(c => `/${c.slug}/`),

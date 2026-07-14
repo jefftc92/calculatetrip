@@ -316,18 +316,10 @@ const ratingRows = [
   </div>
 </div>
 
+<%# Only per-page data is inlined; the full resort dataset (needed by the
+    client picker) is fetched once from /pair-data.json and cached across
+    all compare pages, keeping each page small. %>
 <script id="pair-data" type="application/json">
-<%- JSON.stringify({
-  base: [a.slug, b.slug],
-  resorts: resorts.map(r => ({
-    slug: r.slug, name: r.name, country: r.country, area: r.area, type: r.type,
-    priceLevel: r.priceLevel || null, ageNote: r.ageNote || null, notes: r.notes || null,
-    ratings: r.ratings, amenities: r.amenities, agodaLink: r.agodaLink,
-    whatYouNeedToKnow: r.whatYouNeedToKnow,
-    bestTimeToVisit: r.bestTimeToVisit,
-    activities: r.activities,
-  })),
-  ratingRows,
-}) %>
+<%- JSON.stringify({ base: [a.slug, b.slug], ratingRows }) %>
 </script>
 <script src="/compare-pair.js" defer></script>
