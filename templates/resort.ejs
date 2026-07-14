@@ -34,7 +34,7 @@
         <p class="font-sans text-ocean-400 mt-2 text-sm"><%= r.area %>, <%= r.country %> · Nearest airport: <%= r.airport %></p>
       </div>
       <div class="shrink-0 bg-ocean-900 border border-ocean-700 rounded-2xl px-6 py-4 text-center min-w-[120px]">
-        <div class="font-serif text-5xl font-bold tabular-nums leading-none <%= scoreColor(r.ratings.overall) %>"><%= r.ratings.overall %></div>
+        <div class="font-serif text-5xl font-bold tabular-nums leading-none <%= scoreColor(r.ratings.overall) %>"><%= r.ratings.overall ?? '—' %></div>
         <div class="font-sans text-xs text-ocean-400 mt-1"><%= scoreLabel(r.ratings.overall) %></div>
         <div class="font-sans text-xs text-ocean-600 mt-0.5">out of 10</div>
       </div>

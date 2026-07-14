@@ -220,7 +220,7 @@ async function build() {
     const related = resorts.filter(o => o.slug !== r.slug && (o.country === r.country || o.type === r.type)).slice(0, 2)
     await buildPage(`/resorts/${r.slug}/`, 'resort', { resort: r, related }, {
       title: `${r.name} Review 2025 | All-Inclusive Rating | ${SITE_NAME}`,
-      description: `Independent review of ${r.name} in ${r.country}. Rated ${r.ratings.overall}/10 overall. Scores for food, beach, pool, rooms, value, and service.`,
+      description: `Independent review of ${r.name} in ${r.country}. ${r.ratings.overall != null ? `Rated ${r.ratings.overall}/10 overall. ` : ''}Scores for food, beach, pool, rooms, value, and service.`,
     })
   }
 

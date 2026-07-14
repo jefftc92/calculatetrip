@@ -60,9 +60,9 @@
             <span class="font-sans text-sm text-ocean-800 group-hover:text-ocean-950 transition-colors truncate"><%= a.name %> vs <%= b.name %></span>
           </div>
           <div class="flex items-center gap-1.5 shrink-0 ml-3">
-            <span class="font-sans text-xs font-bold text-emerald-600"><%= a.ratings.overall %></span>
+            <span class="font-sans text-xs font-bold text-emerald-600"><%= a.ratings.overall ?? '—' %></span>
             <span class="font-sans text-xs text-ocean-300">vs</span>
-            <span class="font-sans text-xs font-bold text-emerald-600"><%= b.ratings.overall %></span>
+            <span class="font-sans text-xs font-bold text-emerald-600"><%= b.ratings.overall ?? '—' %></span>
           </div>
         </a>
       <% }) %>

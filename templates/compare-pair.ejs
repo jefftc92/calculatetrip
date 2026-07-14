@@ -48,7 +48,7 @@ const ratingRows = [
         <div class="rounded-2xl p-4 sm:p-5 border bg-white/5 border-white/10" data-slug="<%= r.slug %>">
           <a href="/resorts/<%= r.slug %>/" class="font-serif text-base sm:text-lg font-bold text-white hover:text-gold-300 transition-colors block leading-snug mb-1"><%= r.name %></a>
           <p class="font-sans text-xs text-ocean-400 mb-3"><%= r.country %> · <%= r.type === 'adults-only' ? 'Adults Only' : 'Family' %></p>
-          <div class="font-serif text-4xl font-bold tabular-nums <%= scoreColor(r.ratings.overall) %>"><%= r.ratings.overall %></div>
+          <div class="font-serif text-4xl font-bold tabular-nums <%= scoreColor(r.ratings.overall) %>"><%= r.ratings.overall ?? '—' %></div>
           <div class="font-sans text-xs text-ocean-400 mt-0.5 mb-4"><%= scoreLabel(r.ratings.overall) %></div>
           <div class="flex flex-wrap gap-1 mb-4">
             <% r.amenities.forEach(am => { %>
@@ -165,7 +165,7 @@ const ratingRows = [
         <p class="font-sans text-base text-ocean-700 leading-relaxed"><%= overview.keyDifferences %></p>
       <% } else { %>
         <p class="font-sans text-base text-ocean-700 leading-relaxed">
-          <%= winner.name %> (<%= winner.ratings.overall %>/10) edges ahead of <%= loser.name %> (<%= loser.ratings.overall %>/10) overall, but both rank among the finest all-inclusive resorts in the region.<% if (a.type !== b.type) { %> The most decisive factor for many travelers will be audience: <%= a.type === 'adults-only' ? a.name : b.name %> is adults-only, while <%= a.type === 'family' ? a.name : b.name %> welcomes families.<% } %><% if (a.country !== b.country) { %> <%= a.name %> is located in <%= a.country %>, while <%= b.name %> is in <%= b.country %> — a meaningful difference in travel logistics, climate, and overall character.<% } %>
+          <% if (winner.ratings.overall != null && loser.ratings.overall != null) { %><%= winner.name %> (<%= winner.ratings.overall %>/10) edges ahead of <%= loser.name %> (<%= loser.ratings.overall %>/10) overall, but both rank among the finest all-inclusive resorts in the region.<% } else { %><%= winner.name %> and <%= loser.name %> both rank among the finest all-inclusive resorts in the region — compare their category ratings below.<% } %><% if (a.type !== b.type) { %> The most decisive factor for many travelers will be audience: <%= a.type === 'adults-only' ? a.name : b.name %> is adults-only, while <%= a.type === 'family' ? a.name : b.name %> welcomes families.<% } %><% if (a.country !== b.country) { %> <%= a.name %> is located in <%= a.country %>, while <%= b.name %> is in <%= b.country %> — a meaningful difference in travel logistics, climate, and overall character.<% } %>
         </p>
         <div class="flex flex-col sm:flex-row gap-3 mt-5">
           <a href="<%= winner.agodaLink %>" target="_blank" rel="noopener noreferrer sponsored" class="flex-1 text-center font-sans text-sm font-bold bg-gold-500 hover:bg-gold-600 text-white rounded-xl py-3 transition-colors">Check Prices — <%= winner.name.split(' ').slice(0,2).join(' ') %> →</a>
@@ -255,7 +255,9 @@ const ratingRows = [
       <% [
         {
           q: `Which is better — ${a.name} or ${b.name}?`,
-          a: `Based on our ratings, ${winner.name} scores ${winner.ratings.overall}/10 compared to ${loser.ratings.overall}/10 for ${loser.name}. That said, "better" depends on your priorities. ${overview ? overview.whoShouldChooseA + ' ' + overview.whoShouldChooseB : `${winner.name} edges ahead overall, but both resorts rank among the finest all-inclusives in the region.`}`,
+          a: `${winner.ratings.overall != null && loser.ratings.overall != null
+            ? `Based on our ratings, ${winner.name} scores ${winner.ratings.overall}/10 compared to ${loser.ratings.overall}/10 for ${loser.name}.`
+            : `Our category ratings give ${winner.name} the edge overall.`} That said, "better" depends on your priorities. ${overview ? overview.whoShouldChooseA + ' ' + overview.whoShouldChooseB : `${winner.name} edges ahead overall, but both resorts rank among the finest all-inclusives in the region.`}`,
         },
         {
           q: `Is ${a.name} good for families?`,

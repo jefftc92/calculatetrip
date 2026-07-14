@@ -65,7 +65,7 @@
         ${!isBase ? `<button type="button" data-remove="${slug}" class="absolute top-2 right-2 text-white/40 hover:text-white text-lg leading-none w-6 h-6 flex items-center justify-center rounded-full hover:bg-white/10">×</button>` : ''}
         <a href="/resorts/${r.slug}/" class="font-serif text-base sm:text-lg font-bold text-white hover:text-gold-300 transition-colors block leading-snug mb-1 pr-4">${r.name}</a>
         <p class="font-sans text-xs text-ocean-400 mb-3">${r.country} · ${r.type === 'adults-only' ? 'Adults Only' : 'Family'}</p>
-        <div class="font-serif text-4xl font-bold tabular-nums ${scoreColor(r.ratings.overall)}">${r.ratings.overall}</div>
+        <div class="font-serif text-4xl font-bold tabular-nums ${scoreColor(r.ratings.overall)}">${r.ratings.overall ?? '—'}</div>
         <div class="font-sans text-xs text-ocean-400 mt-0.5 mb-4">${scoreLabel(r.ratings.overall)}</div>
         <div class="flex flex-wrap gap-1 mb-4">${chips}</div>
         <a href="${r.agodaLink}" target="_blank" rel="noopener noreferrer sponsored" class="block font-sans text-sm font-semibold rounded-xl py-2.5 transition-colors text-center bg-gold-500 hover:bg-gold-600 text-white">Check Prices →</a>

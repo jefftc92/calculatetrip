@@ -19,7 +19,7 @@
         </div>
       </div>
       <div class="shrink-0 text-right">
-        <div class="text-3xl font-bold font-sans tabular-nums leading-none <%= scoreColor(resort.ratings.overall) %>"><%= resort.ratings.overall %></div>
+        <div class="text-3xl font-bold font-sans tabular-nums leading-none <%= scoreColor(resort.ratings.overall) %>"><%= resort.ratings.overall ?? '—' %></div>
         <div class="text-xs font-sans text-ocean-400 mt-0.5"><%= scoreLabel(resort.ratings.overall) %></div>
       </div>
     </div>

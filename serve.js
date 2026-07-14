@@ -139,7 +139,7 @@ async function renderComparePage(a, b) {
   return ejs.renderFile(path.join(TEMPLATES, '_layout.ejs'), {
     ...locals,
     title: `${a.name} vs ${b.name} 2025 | Resort Comparison | ${SITE_NAME}`,
-    description: `Detailed comparison of ${a.name} (${a.ratings.overall}/10) and ${b.name} (${b.ratings.overall}/10). Side-by-side ratings, amenities, and editorial verdict.`,
+    description: `Detailed comparison of ${a.name}${a.ratings.overall != null ? ` (${a.ratings.overall}/10)` : ''} and ${b.name}${b.ratings.overall != null ? ` (${b.ratings.overall}/10)` : ''}. Side-by-side ratings, amenities, and editorial verdict.`,
     body: inner,
     activeNav: '/compare/',
   }, { async: false })
