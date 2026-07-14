@@ -14,8 +14,14 @@ const SITE_NAME = 'CalculateTrip'
 
 const { resorts: legacyResorts, pairOverviews: legacyPairOverviews } = require('./data/resorts')
 const { newResorts, newPairOverviews, shouldGeneratePair } = require('./data/resorts-new')
+const { fillResortContent } = require('./scripts/formulaic-resort')
 
 const resorts = [...legacyResorts, ...newResorts]
+
+// Fill any missing editorial fields (description, whatYouNeedToKnow,
+// bestTimeToVisit, activities) so every resort page and comparison carries
+// the same sections. Hand-authored fields are never overwritten.
+for (const r of resorts) Object.assign(r, fillResortContent(r))
 
 // Merge overviews: shards first (lowest priority), then module-level new,
 // then legacy hand-authored (highest priority, never overwritten).
@@ -52,8 +58,9 @@ function countries() {
     .map(r => ({ name: r.country, slug: r.countrySlug, count: byCountry(r.countrySlug).length }))
 }
 
-// Pairs with pairOverview content — used for building comparison pages and sitemap.
-// Includes all cross-country pairs once shard files are merged.
+// Every resort pair is a valid comparison — serve.js renders each on demand
+// and the overview is generated at request time when no hand-authored or LLM
+// overview exists. Used for the sitemap.
 let _allPairs = null
 function allComparisonPairs() {
   if (_allPairs) return _allPairs
@@ -62,8 +69,7 @@ function allComparisonPairs() {
     for (let j = i + 1; j < resorts.length; j++) {
       const x = resorts[i], y = resorts[j]
       const [a, b] = x.slug < y.slug ? [x, y] : [y, x]
-      const key = `${a.slug}-vs-${b.slug}`
-      if (pairOverviews[key]) _allPairs.push({ a, b })
+      _allPairs.push({ a, b })
     }
   }
   return _allPairs
@@ -255,6 +261,21 @@ async function build() {
   // Compare pages are all served dynamically by serve.js on-demand.
   // Pre-building them would generate thousands of large files (5+ GB)
   // and blow the deployment disk quota. serve.js handles them via EJS.
+
+  // Shared dataset for the compare picker, written once and fetched by
+  // compare-pair.js. Keeping it out of each compare page's HTML keeps those
+  // (dynamically-rendered) pages small — ~40KB instead of ~1.5MB each.
+  const pairData = {
+    resorts: resorts.map(r => ({
+      slug: r.slug, name: r.name, country: r.country, area: r.area, type: r.type,
+      priceLevel: r.priceLevel || null, ageNote: r.ageNote || null, notes: r.notes || null,
+      ratings: r.ratings, amenities: r.amenities, agodaLink: r.agodaLink,
+      whatYouNeedToKnow: r.whatYouNeedToKnow,
+      bestTimeToVisit: r.bestTimeToVisit,
+      activities: r.activities,
+    })),
+  }
+  fs.writeFileSync(path.join(DIST, 'pair-data.json'), JSON.stringify(pairData), 'utf8')
 
   const urls = [
     '/', '/resorts/', '/compare/',

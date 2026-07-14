@@ -30,8 +30,26 @@ const MIME = {
 // ---------------------------------------------------------------------------
 const { resorts: legacyResorts, pairOverviews: legacyPairOverviews } = require('./data/resorts')
 const { newResorts, newPairOverviews } = require('./data/resorts-new')
+const { buildOverview } = require('./scripts/formulaic-overview')
+const { fillResortContent } = require('./scripts/formulaic-resort')
 const resorts = [...legacyResorts, ...newResorts]
+// Fill missing editorial fields so dynamically-rendered compare pages show the
+// same When to Visit / Activities / What You Need to Know content as elsewhere.
+for (const r of resorts) Object.assign(r, fillResortContent(r))
 const bySlugMap = Object.fromEntries(resorts.map(r => [r.slug, r]))
+
+// Compare-picker dataset, cached once. build.js writes this to dist/, but
+// serve it here too so the picker works even when running without a build.
+const pairDataJson = JSON.stringify({
+  resorts: resorts.map(r => ({
+    slug: r.slug, name: r.name, country: r.country, area: r.area, type: r.type,
+    priceLevel: r.priceLevel || null, ageNote: r.ageNote || null, notes: r.notes || null,
+    ratings: r.ratings, amenities: r.amenities, agodaLink: r.agodaLink,
+    whatYouNeedToKnow: r.whatYouNeedToKnow,
+    bestTimeToVisit: r.bestTimeToVisit,
+    activities: r.activities,
+  })),
+})
 
 // Merge overviews — shards loaded eagerly at startup so the first compare
 // request doesn't block. Falls back to legacy-only until loading completes.
@@ -111,7 +129,7 @@ async function renderComparePage(a, b) {
   const canonical = SITE_URL + routePath
   const locals = {
     SITE_URL, SITE_NAME, canonical,
-    a, b, resorts, pairOverviews,
+    a, b, resorts, pairOverviews, buildOverview,
     bySlug, byCountry, topBy,
     countries: countries(),
     allComparisonPairs: [],
@@ -144,6 +162,13 @@ http.createServer(async (req, res) => {
       fs.createReadStream(p).pipe(res)
       return
     }
+  }
+
+  // 1b. Compare-picker dataset (fallback if not pre-built into dist/)
+  if (url === '/pair-data.json') {
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' })
+    res.end(pairDataJson)
+    return
   }
 
   // 2. Dynamic compare page fallback

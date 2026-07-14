@@ -3,8 +3,11 @@
 
   const dataEl = document.getElementById('pair-data')
   if (!dataEl) return
+  // Inline data holds only { base, ratingRows }; the full resort dataset is
+  // fetched once from /pair-data.json (cached across all compare pages).
   const data = JSON.parse(dataEl.textContent)
-  const bySlug = Object.fromEntries(data.resorts.map(r => [r.slug, r]))
+  data.resorts = []
+  let bySlug = {}
 
   function getExtras() {
     const params = new URLSearchParams(location.search)
@@ -248,6 +251,8 @@
     renderMultiOverview(slugs)
   }
 
+  // Everything below needs the full dataset, so it runs after the fetch.
+  function init() {
   // ---------- Add resort modal ----------
 
   const modal     = document.getElementById('add-resort-modal')
@@ -354,4 +359,17 @@
   })
 
   applyExtras()
+  }
+
+  // Load the shared dataset, then wire up the picker. The base two-resort
+  // comparison is already server-rendered, so a slow or failed fetch only
+  // affects the optional "add resort" picker, not the core page.
+  fetch('/pair-data.json')
+    .then(res => res.json())
+    .then(d => {
+      data.resorts = d.resorts
+      bySlug = Object.fromEntries(d.resorts.map(r => [r.slug, r]))
+      init()
+    })
+    .catch(() => {})
 })()
