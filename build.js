@@ -14,6 +14,7 @@ const SITE_NAME = 'CalculateTrip'
 
 const { resorts: legacyResorts, pairOverviews: legacyPairOverviews } = require('./data/resorts')
 const { newResorts, newPairOverviews, shouldGeneratePair } = require('./data/resorts-new')
+const { buildOverview } = require('./scripts/formulaic-overview')
 
 const resorts = [...legacyResorts, ...newResorts]
 
@@ -123,6 +124,14 @@ const RATING_TOOLTIPS = {
   cleanliness:  'Reflects housekeeping standards across rooms and public areas. AI-analyzed from verified guest reviews.',
   service:      'Rates staff warmth, attentiveness, and responsiveness. AI-analyzed from verified guest reviews.',
   sleepQuality: 'Reflects noise levels, bed comfort, and overall quality of rest as reported by guests.',
+}
+
+// Any comparison page without a stored overview gets one written at build
+// time. buildOverview is deterministic per pair, so output is stable across
+// builds; stored (hand-authored or LLM-generated) overviews always win.
+for (const { a, b } of allComparisonPairs()) {
+  const key = `${a.slug}-vs-${b.slug}`
+  if (!pairOverviews[key]) pairOverviews[key] = buildOverview(a, b)
 }
 
 const baseLocals = {
