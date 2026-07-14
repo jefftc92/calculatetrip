@@ -9,8 +9,9 @@
 
 const {
   rngFor, pick, fmt, cap, listJoin, locationOf,
-  CATEGORY, topRatings, weakestRating, ratingGaps, PRICE_WORDS,
+  CATEGORY, topRatings, weakestRating, ratingGaps, PRICE_WORDS, scoreWord,
   seasonStr, destinationActivities, activityAmenities,
+  areaCharacter, realArea,
 } = require('./destinations')
 
 // ---- section writers -----------------------------------------------------------
@@ -146,6 +147,192 @@ function writeKeyDifferences(a, b, rng) {
   return parts.join(' ')
 }
 
+function article(word) { return /^[aeiou]/i.test(word) ? 'an' : 'a' }
+
+// Countries that take a definite article mid-sentence ("in the Bahamas").
+const THE_COUNTRIES = new Set(['Bahamas', 'Turks and Caicos', 'British Virgin Islands', 'United States', 'Maldives', 'Philippines', 'United Arab Emirates'])
+function inCountry(c) { return THE_COUNTRIES.has(c) ? `the ${c}` : c }
+
+// Detailed writer for same-country pairs (Mexico excluded — its volume makes
+// destination color repeat too often). Produces multi-paragraph editorial
+// prose (~230-290 words): area character, a full ratings narrative including
+// where the two resorts converge, practical contrasts, and a verdict.
+function writeDetailedKeyDifferences(a, b, rng) {
+  const paras = []
+  const country = a.country
+  const aChar = areaCharacter(a), bChar = areaCharacter(b)
+  const aArea = realArea(a), bArea = realArea(b)
+  const sameSpot = (aChar && aChar === bChar) || (!aChar && !bChar && aArea === bArea)
+
+  // --- P1: setting -----------------------------------------------------------
+  if (sameSpot) {
+    const place = aChar || (aArea ? `${aArea}, ${country}` : null)
+    if (place) {
+      paras.push(pick(rng, [
+        `${a.name} and ${b.name} occupy the same corner of ${inCountry(country)} — both sit in ${place} — so location is a genuine wash here. The choice comes down entirely to how each property runs: what it does well, what it charges, and who it's built for.`,
+        `Geography won't help you choose between these two: ${a.name} and ${b.name} both call ${place} home. That makes this one of the cleaner head-to-heads in ${inCountry(country)} — same setting, same weather, same excursions, different resorts.`,
+      ]))
+    } else {
+      paras.push(pick(rng, [
+        `${a.name} and ${b.name} are both ${country} all-inclusives, and nothing in their listed locations separates them — so this comparison is purely about the properties: what each does well, what each charges, and who each is built for.`,
+        `Set the map aside for this one: both resorts call ${inCountry(country)} home, and the real differences live in the rating card, the price, and the crowd each is designed to serve.`,
+      ]))
+    }
+  } else if (aChar && bChar) {
+    paras.push(pick(rng, [
+      `${a.name} and ${b.name} are both ${country} all-inclusives, but they anchor different corners of the destination. ${a.name} sits in ${aChar}. ${b.name} is in ${bChar}. That split shapes everything downstream — transfer times, the water you swim in, and what's outside the gates.`,
+      `Start with where each one puts you. ${a.name} is in ${aChar}, while ${b.name} sits in ${bChar}. Same country, two noticeably different trips — worth deciding which coast you actually want before weighing the resorts themselves.`,
+      `The first real difference is the map. ${a.name}'s address is ${aChar}; ${b.name}'s is ${bChar}. Neither is objectively better — they're different vacations — but most travelers will feel a pull toward one setting over the other before a single rating enters the picture.`,
+    ]))
+  } else {
+    const aLoc = aChar || (aArea ? `${aArea}, ${country}` : null)
+    const bLoc = bChar || (bArea ? `${bArea}, ${country}` : null)
+    if (aLoc && bLoc) {
+      paras.push(pick(rng, [
+        `${a.name} and ${b.name} both fly the ${country} flag but from different bases: ${a.name} in ${aLoc}, ${b.name} in ${bLoc}. Factor the setting in alongside the scores — within one country, the coast you pick still changes the trip.`,
+        `Both resorts are in ${inCountry(country)}, with ${a.name} based in ${aLoc} and ${b.name} in ${bLoc}. The scores below separate the properties; the map separates the vacations.`,
+      ]))
+    } else {
+      // Only one side has a usable sub-location — describe just that one.
+      const known = aLoc ? a : b, kLoc = aLoc || bLoc
+      paras.push(pick(rng, [
+        `${a.name} and ${b.name} are both ${country} all-inclusives. The clearest geographic marker between them is ${known.name}'s home in ${kLoc} — worth weighing alongside the scorecard below.`,
+        `Both resorts call ${inCountry(country)} home; ${known.name} sits in ${kLoc}, and from there the comparison is about the properties themselves.`,
+      ]))
+    }
+  }
+
+  // --- P2: ratings narrative ---------------------------------------------------
+  const s2 = []
+  const ao = a.ratings.overall, bo = b.ratings.overall
+  if (ao != null && bo != null) {
+    const d = Math.abs(ao - bo)
+    const w = ao >= bo ? a : b, l = ao >= bo ? b : a
+    if (d < 0.2) {
+      s2.push(pick(rng, [
+        `On the numbers, this is a dead heat: guests score them ${fmt(ao)} and ${fmt(bo)} overall, so the headline rating settles nothing.`,
+        `Overall guest scores won't break the tie — ${fmt(ao)} versus ${fmt(bo)} is statistical noise.`,
+      ]))
+    } else if (d < 0.6) {
+      s2.push(pick(rng, [
+        `${w.name} takes the overall rating by a nose, ${fmt(w.ratings.overall)} to ${fmt(l.ratings.overall)} — real, but not decisive on its own.`,
+        `Guests hand ${w.name} a modest overall lead: ${fmt(w.ratings.overall)} against ${fmt(l.ratings.overall)}.`,
+      ]))
+    } else {
+      s2.push(pick(rng, [
+        `The overall ratings aren't close: ${fmt(w.ratings.overall)} for ${w.name} versus ${fmt(l.ratings.overall)} for ${l.name}, a gap guests plainly feel during a stay.`,
+        `${w.name} is the clear favorite of the two on paper, ${fmt(w.ratings.overall)} to ${fmt(l.ratings.overall)} overall.`,
+      ]))
+    }
+  }
+  const gaps = ratingGaps(a, b, 0.4)
+  if (gaps.length) {
+    const g = gaps[0]
+    const w = g.diff > 0 ? a : b, l = g.diff > 0 ? b : a
+    const wv = g.diff > 0 ? g.av : g.bv, lv = g.diff > 0 ? g.bv : g.av
+    const cat = CATEGORY[g.k]
+    s2.push(pick(rng, [
+      `Dig into the categories and the sharpest divide is ${cat.noun}: ${w.name} posts ${article(scoreWord(wv))} ${scoreWord(wv)} ${fmt(wv)} while ${l.name} sits at ${fmt(lv)} — ${pick(rng, cat.consequences)}.`,
+      `The category that should drive the decision is ${cat.noun}. ${w.name} earns a ${scoreWord(wv)} ${fmt(wv)} there against ${l.name}'s ${fmt(lv)} — ${pick(rng, cat.consequences)}.`,
+    ]))
+    if (gaps.length > 1) {
+      const g2 = gaps[1]
+      const w2 = g2.diff > 0 ? a : b
+      const wv2 = g2.diff > 0 ? g2.av : g2.bv, lv2 = g2.diff > 0 ? g2.bv : g2.av
+      const noun2 = CATEGORY[g2.k].noun
+      s2.push(w2 === w
+        ? pick(rng, [
+            `The same resort stretches its lead on ${noun2}, ${fmt(wv2)} to ${fmt(lv2)}, so the gaps mostly point one way.`,
+            `${w.name} doubles down on ${noun2} too (${fmt(wv2)} vs ${fmt(lv2)}).`,
+          ])
+        : pick(rng, [
+            `But it cuts both ways: ${w2.name} strikes back on ${noun2}, ${fmt(wv2)} to ${fmt(lv2)}.`,
+            `${w2.name} answers on ${noun2}, though — ${fmt(wv2)} against ${fmt(lv2)} — so each resort owns part of the scorecard.`,
+          ]))
+    }
+    if (gaps.length > 2) {
+      const g3 = gaps[2]
+      const w3 = g3.diff > 0 ? a : b
+      const wv3 = g3.diff > 0 ? g3.av : g3.bv, lv3 = g3.diff > 0 ? g3.bv : g3.av
+      s2.push(`${w3 === a ? a.name : b.name} also edges ${CATEGORY[g3.k].noun}, ${fmt(wv3)} to ${fmt(lv3)}.`)
+    }
+  } else {
+    s2.push(pick(rng, [
+      `Category by category, the rating cards are near mirror images — no gap reaches even half a point — which is exactly when setting, price, and style should carry the decision.`,
+      `Neither property opens a meaningful ratings lead in any category, so treat the scorecard as a tie and decide on location and feel.`,
+    ]))
+  }
+  // Convergences: categories where they're close AND both genuinely good.
+  const gapKeys = new Set(gaps.slice(0, 3).map(g => g.k))
+  const close = Object.keys(CATEGORY).filter(k => {
+    const av = a.ratings[k], bv = b.ratings[k]
+    return av != null && bv != null && !gapKeys.has(k) && Math.abs(av - bv) <= 0.2 && Math.min(av, bv) >= 8.4
+  }).sort((x, y) => Math.min(b.ratings[y], a.ratings[y]) - Math.min(b.ratings[x], a.ratings[x]))
+  if (close.length >= 2) {
+    s2.push(pick(rng, [
+      `Where they agree is just as telling: both post virtually identical — and ${scoreWord(Math.min(a.ratings[close[0]], b.ratings[close[0]]))} — marks for ${CATEGORY[close[0]].noun} and ${CATEGORY[close[1]].noun}, so neither is a compromise there.`,
+      `Call ${CATEGORY[close[0]].noun} and ${CATEGORY[close[1]].noun} a push — the scores land within a whisker of each other, and at a high level for both.`,
+    ]))
+  }
+  paras.push(s2.join(' '))
+
+  // --- P3: practical contrasts + verdict --------------------------------------
+  const s3 = []
+  if (a.type !== b.type) {
+    const adults = a.type === 'adults-only' ? a : b
+    const fam = a.type === 'adults-only' ? b : a
+    s3.push(pick(rng, [
+      `Before any of that, though, one structural fact may decide it: ${adults.name} is adults-only while ${fam.name} welcomes children.`,
+      `Audience is the hard filter here — ${adults.name} runs adults-only; ${fam.name} takes families.`,
+    ]))
+  }
+  const ap = PRICE_WORDS[a.priceLevel], bp = PRICE_WORDS[b.priceLevel]
+  if (ap && bp && ap !== bp) {
+    s3.push(pick(rng, [
+      `Budgets diverge too: ${a.name} books as a ${ap} stay, ${b.name} as ${bp}.`,
+      `Expect different bills — ${a.name} is priced ${ap}, ${b.name} ${bp}.`,
+    ]))
+  } else if (ap && bp) {
+    s3.push(`Both sit at a ${ap} price point, so cost is unlikely to be the tiebreaker.`)
+  }
+  const aActs = activityAmenities(a, 8), bActs = activityAmenities(b, 8)
+  const aOnly = aActs.filter(x => !bActs.includes(x)).slice(0, 3)
+  const bOnly = bActs.filter(x => !aActs.includes(x)).slice(0, 3)
+  if (aOnly.length && bOnly.length) {
+    s3.push(pick(rng, [
+      `On facilities, ${a.name} brings ${listJoin(aOnly)} that ${b.name} doesn't list; ${b.name} counters with ${listJoin(bOnly)}.`,
+      `Each holds amenities the other lacks — ${listJoin(aOnly)} at ${a.name}; ${listJoin(bOnly)} at ${b.name}.`,
+    ]))
+  } else if (aOnly.length || bOnly.length) {
+    const has = aOnly.length ? a : b, other = aOnly.length ? b : a
+    s3.push(`On facilities, ${has.name} adds ${listJoin(aOnly.length ? aOnly : bOnly)} that ${other.name} doesn't list.`)
+  }
+  const aTop2 = topRatings(a, 2), bTop2 = topRatings(b, 2)
+  const aTop = aTop2[0], bTop = bTop2[0]
+  if (aTop && bTop && aTop.k === bTop.k && aTop2[1] && bTop2[1] && aTop2[1].k === bTop2[1].k) {
+    // Even the top-two categories match — the cards run parallel.
+    s3.push(pick(rng, [
+      `Their rating cards run almost parallel — ${CATEGORY[aTop.k].noun} tops both, with ${CATEGORY[aTop2[1].k].noun} next — so lean on the facility differences and the category gaps above to break the tie.`,
+      `Both properties are built the same way on paper: ${CATEGORY[aTop.k].noun} first, ${CATEGORY[aTop2[1].k].noun} second. When the shapes match this closely, the deciding factors are the gaps above and which amenity list reads like your vacation.`,
+    ]))
+  } else if (aTop && bTop && aTop.k === bTop.k && aTop2[1] && bTop2[1]) {
+    // Both peak on the same category — compare one rung down instead.
+    s3.push(pick(rng, [
+      `Both resorts peak on ${CATEGORY[aTop.k].noun} (${fmt(aTop.v)} and ${fmt(bTop.v)}), so look one rung down for the real signature: ${a.name}'s next-best card is ${CATEGORY[aTop2[1].k].noun} (${fmt(aTop2[1].v)}), while ${b.name}'s is ${CATEGORY[bTop2[1].k].noun} (${fmt(bTop2[1].v)}).`,
+      `Tellingly, ${CATEGORY[aTop.k].noun} is the top score at both properties — the split shows up second from the top, where ${a.name} backs it with ${CATEGORY[aTop2[1].k].noun} (${fmt(aTop2[1].v)}) and ${b.name} with ${CATEGORY[bTop2[1].k].noun} (${fmt(bTop2[1].v)}).`,
+    ]))
+  } else if (aTop && bTop) {
+    s3.push(pick(rng, [
+      `The short version: book ${a.name} when ${CATEGORY[aTop.k].noun} (${fmt(aTop.v)}) and its side of ${inCountry(country)} fit the trip you're planning; book ${b.name} when ${CATEGORY[bTop.k].noun} (${fmt(bTop.v)}) matters more.`,
+      `Bottom line — ${a.name}'s case rests on ${CATEGORY[aTop.k].noun} (${fmt(aTop.v)}); ${b.name}'s on ${CATEGORY[bTop.k].noun} (${fmt(bTop.v)}). Decide which of those you'd actually miss.`,
+      `If forced to summarize: ${a.name} for ${CATEGORY[aTop.k].noun}, ${b.name} for ${CATEGORY[bTop.k].noun} — and let the setting break any remaining tie.`,
+    ]))
+  }
+  paras.push(s3.join(' '))
+
+  return paras.filter(p => p.trim()).join('\n\n')
+}
+
 // `avoid` carries the template indices used for the other resort's blurb so the
 // two "who should choose" blocks on one page never share the same skeleton.
 function writeWhoShouldChoose(r, other, rng, avoid = {}) {
@@ -253,7 +440,13 @@ function writeActivities(a, b, rng) {
 // ---- public API ---------------------------------------------------------------
 function buildOverview(a, b) {
   const rng = rngFor(`${a.slug}-vs-${b.slug}`)
-  const keyDifferences = writeKeyDifferences(a, b, rng)
+  // Same-country pairs get the detailed multi-paragraph treatment. Mexico is
+  // the exception: with ~380 resorts there, area color would repeat across
+  // tens of thousands of pages, so those pairs keep the compact writer.
+  const detailed = a.country && a.country === b.country && a.country !== 'Mexico'
+  const keyDifferences = detailed
+    ? writeDetailedKeyDifferences(a, b, rng)
+    : writeKeyDifferences(a, b, rng)
   const chooseA = writeWhoShouldChoose(a, b, rng)
   const chooseB = writeWhoShouldChoose(b, a, rng, chooseA.used)
   return {

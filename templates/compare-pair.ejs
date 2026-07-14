@@ -162,7 +162,9 @@ const ratingRows = [
       <p class="font-sans text-xs font-bold uppercase tracking-widest text-ocean-500 mb-2">Editorial Overview</p>
       <h2 class="font-serif text-2xl font-bold text-ocean-950 mb-4">Key Differences</h2>
       <% if (overview) { %>
-        <p class="font-sans text-base text-ocean-700 leading-relaxed"><%= overview.keyDifferences %></p>
+        <% overview.keyDifferences.split(/\n\n+/).forEach(par => { %>
+          <p class="font-sans text-base text-ocean-700 leading-relaxed [&:not(:last-child)]:mb-4"><%= par %></p>
+        <% }) %>
       <% } else { %>
         <p class="font-sans text-base text-ocean-700 leading-relaxed">
           <% if (winner.ratings.overall != null && loser.ratings.overall != null) { %><%= winner.name %> (<%= winner.ratings.overall %>/10) edges ahead of <%= loser.name %> (<%= loser.ratings.overall %>/10) overall, but both rank among the finest all-inclusive resorts in the region.<% } else { %><%= winner.name %> and <%= loser.name %> both rank among the finest all-inclusive resorts in the region — compare their category ratings below.<% } %><% if (a.type !== b.type) { %> The most decisive factor for many travelers will be audience: <%= a.type === 'adults-only' ? a.name : b.name %> is adults-only, while <%= a.type === 'family' ? a.name : b.name %> welcomes families.<% } %><% if (a.country !== b.country) { %> <%= a.name %> is located in <%= a.country %>, while <%= b.name %> is in <%= b.country %> — a meaningful difference in travel logistics, climate, and overall character.<% } %>

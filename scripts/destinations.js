@@ -289,6 +289,127 @@ function destinationActivities(r) {
   return MAP[r.country] || 'boat excursions, watersports, and local sightseeing arranged through the resort'
 }
 
+// ---- area character ------------------------------------------------------------
+// Editorial one-liners describing what each resort area is actually like.
+// Used by the detailed same-country comparison writer. First match wins.
+const AREA_CHARACTER = {
+  'Dominican Republic': [
+    [/cap cana/i, 'Cap Cana, the gated upscale enclave south of Punta Cana with Juanillo Beach and Punta Espada golf'],
+    [/uvero alto/i, 'Uvero Alto, the quieter far-north end of the Punta Cana coast with a wilder, palm-backed beach'],
+    [/miches/i, 'Miches, the low-density emerging coast on Samaná Bay'],
+    [/punta cana|bavaro|cortecito|cabeza de toro/i, 'the Punta Cana–Bávaro corridor, the DR’s main resort strip with long white beaches and quick transfers from PUJ airport'],
+    [/la romana|bayahibe|dominicus/i, 'the La Romana–Bayahibe coast, known for calmer seas, diving, and Saona Island boat trips'],
+    [/puerto plata|sosua|cabarete/i, 'the greener Puerto Plata north coast — better value, trade-wind beaches, and its own POP airport'],
+    [/boca chica|juan dolio|guayacanes|el soco/i, 'the Boca Chica–Juan Dolio strip, closest to Santo Domingo'],
+    [/terrenas|galeras|levantado|balandra|saman/i, 'the lush Samaná Peninsula, whale-watching territory each winter'],
+  ],
+  'Jamaica': [
+    [/montego bay|rose hall|ironshore/i, 'Montego Bay, minutes from MBJ airport with reef-sheltered beaches and the busiest resort scene on the island'],
+    [/negril|west end|green island/i, 'Negril, the barefoot west end famous for Seven Mile Beach and cliff-top sunsets'],
+    [/ocho?s? rios/i, 'Ocho Rios, the garden-parish coast near Dunn’s River Falls'],
+    [/runaway bay|duncans|falmouth|trelawny/i, 'the quieter Runaway Bay–Falmouth stretch of the north coast'],
+    [/lucea|hopewell/i, 'the Lucea coast midway between Montego Bay and Negril'],
+    [/bluefields|white house/i, 'Jamaica’s undeveloped south coast, far from the cruise-port crowds'],
+  ],
+  'Cuba': [
+    [/varadero/i, 'Varadero, Cuba’s flagship 20-kilometer beach peninsula about two hours from Havana'],
+    [/cayo coco|cayo guillermo|cayo cruz/i, 'the Jardines del Rey cays — reef-fringed islands reached by causeway, remote from any city'],
+    [/cayo santa maria|las brujas|ensenachos/i, 'the Cayo Santa María cays at the end of a 48-kilometer causeway off the north-central coast'],
+    [/holguin|guardalavaca|rafael freyre/i, 'the green, hilly Holguín coast in eastern Cuba'],
+    [/cayo largo/i, 'Cayo Largo, a remote southern islet prized for its beaches'],
+    [/jibacoa/i, 'Jibacoa, a small beach pocket between Havana and Varadero with snorkeling off the sand'],
+    [/trinidad/i, 'the south coast near colonial Trinidad, a UNESCO World Heritage town'],
+  ],
+  'Saint Lucia': [
+    [/cap estate|rodney bay|gros islet|castries|corinth/i, 'the developed northwest around Rodney Bay and Cap Estate — calm water, restaurants, and nightlife within reach'],
+    [/soufri|jalousle|anse cochon/i, 'the Soufrière coast beneath the Pitons — dramatic, lush, and far more secluded'],
+    [/vieux fort/i, 'Vieux Fort at the island’s southern tip, closest to UVF airport'],
+  ],
+  'Barbados': [
+    [/saint james|saint peter|holetown/i, 'the calm, prestigious Platinum west coast'],
+    [/lawrence gap|oistins/i, 'the livelier south coast near St. Lawrence Gap'],
+    [/bridgetown/i, 'the coast just outside Bridgetown'],
+  ],
+  'Costa Rica': [
+    [/papagayo|playa panama|culebra/i, 'the Gulf of Papagayo, the driest and most resort-developed corner of Guanacaste'],
+    [/brasilito|flamingo|langosta|samara|sardinal|tamarindo/i, 'Guanacaste’s Pacific beach-town coast'],
+    [/drake bay/i, 'remote Drake Bay on the Osa Peninsula, gateway to Corcovado’s rainforest'],
+    [/tortuguero/i, 'Tortuguero’s canal-laced Caribbean jungle, reachable only by boat or plane'],
+    [/tambor/i, 'the Nicoya Peninsula’s sheltered Tambor Bay'],
+  ],
+  'Aruba': [
+    [/palm|eagle/i, 'the Palm–Eagle Beach strip — high-rise energy on Palm, low-rise calm on Eagle'],
+    [/oranjestad/i, 'the coast by Oranjestad, Aruba’s capital'],
+    [/san nicolas/i, 'San Nicolas at the quiet southeastern end, near Baby Beach'],
+  ],
+  'Colombia': [
+    [/san andres/i, 'San Andrés, the Caribbean island famed for its “sea of seven colors”'],
+    [/cartagena|baru/i, 'the Cartagena coast, pairing beach time with the walled Old Town'],
+    [/santa marta/i, 'Santa Marta, where the Sierra Nevada meets the Caribbean'],
+    [/quimbaya/i, 'Quimbaya in the inland coffee region — a plantation stay, not a beach one'],
+  ],
+  'Turks and Caicos': [
+    [/grace bay|providenciales|leeward|wheeland/i, 'Providenciales, home of Grace Bay’s ranked-among-the-world’s-best beach'],
+    [/pine cay|ambergris|south caicos/i, 'the outer cays — private-island seclusion a boat or short flight from Provo'],
+  ],
+  'Bahamas': [
+    [/nassau|paradise island/i, 'Nassau/Paradise Island, the busy hub with casinos, restaurants, and direct flights'],
+    [/freeport/i, 'Freeport on Grand Bahama'],
+    [/andros/i, 'Andros, the Bahamas’ wild bonefishing-and-blue-holes island'],
+    [/san salvador/i, 'remote San Salvador on the Atlantic edge of the archipelago'],
+    [/exuma/i, 'Great Exuma, launch point for the swimming pigs and sandbar-studded Exuma Cays'],
+  ],
+  'Curaçao': [
+    [/willemstad/i, 'the coast around UNESCO-listed Willemstad'],
+    [/nieuwpoort/i, 'the island’s undeveloped southeastern shore'],
+    [/tera kora/i, 'the quieter Tera Kora stretch on the west side'],
+  ],
+  'Belize': [
+    [/san pedro/i, 'San Pedro on Ambergris Caye, steps from the Belize Barrier Reef'],
+    [/coco plum|glovers/i, 'a private cay of its own off the southern coast'],
+    [/hopkins|placencia/i, 'the laid-back Hopkins–Placencia south coast'],
+  ],
+  'Antigua': [
+    [/long island/i, 'private Jumby Bay island, reached by launch from the main island'],
+    [/mamora bay/i, 'sheltered Mamora Bay on the southeast coast'],
+    [/five islands|jolly harbour|bolans/i, 'the calm west coast near Jolly Harbour'],
+    [/saint mary/i, 'the southwest coast in Saint Mary’s Parish'],
+    [/willikies|freetown|phillips/i, 'the breezier Atlantic east coast'],
+    [/john/i, 'the coast near St. John’s, the capital'],
+    [/cedar grove/i, 'the northwest corner near Dickenson Bay'],
+  ],
+  'Brazil': [
+    [/porto de galinhas/i, 'Porto de Galinhas, Pernambuco’s tide-pool beach town'],
+    [/praia do forte|imbassai|sauipe|guarajuba/i, 'Bahia’s Coconut Coast north of Salvador'],
+    [/trancoso|porto seguro/i, 'Bahia’s Discovery Coast around Trancoso and Porto Seguro'],
+    [/maragogi|japaratinga/i, 'the Alagoas reef coast, Brazil’s “Caribbean”'],
+    [/maceio/i, 'the Maceió coast in Alagoas'],
+    [/natal|touros/i, 'Rio Grande do Norte’s dune-backed coast near Natal'],
+    [/florianopolis/i, 'the island beaches of Florianópolis in the south'],
+    [/mangaratiba/i, 'the Costa Verde between Rio and Paraty'],
+    [/caucaia/i, 'the coast just west of Fortaleza'],
+  ],
+}
+
+// Normalized comparison so 'St. Lucia' == 'Saint Lucia' and 'Aruba' == 'Aruba'.
+function sameName(x, y) {
+  const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/\bsaint\b/g, 'st').replace(/[^a-z0-9]/g, '')
+  return norm(x) === norm(y)
+}
+
+// The resort's area when it names a real sub-region (not just the country again).
+function realArea(r) {
+  return r.area && !sameName(r.area, r.country) ? r.area : null
+}
+
+function areaCharacter(r) {
+  const list = AREA_CHARACTER[r.country]
+  if (!list || !r.area) return null
+  for (const [re, note] of list) if (re.test(r.area)) return note
+  return null
+}
+
 // ---- amenity handling --------------------------------------------------------
 const ACTIVITY_AMENITIES = {
   'Scuba Diving': 'scuba diving', 'Diving': 'scuba diving',
@@ -316,9 +437,21 @@ function activityAmenities(r, n) {
   return out
 }
 
+// Plain-English quality word for a 0-10 guest score.
+function scoreWord(v) {
+  if (v >= 9.3) return 'outstanding'
+  if (v >= 9.0) return 'superb'
+  if (v >= 8.5) return 'excellent'
+  if (v >= 8.0) return 'strong'
+  if (v >= 7.0) return 'respectable'
+  if (v >= 6.0) return 'middling'
+  return 'weak'
+}
+
 module.exports = {
   hashStr, rngFor, pick, fmt, cap, listJoin, locationOf, shortLoc,
-  CATEGORY, topRatings, weakestRating, ratingGaps, PRICE_WORDS,
+  CATEGORY, topRatings, weakestRating, ratingGaps, PRICE_WORDS, scoreWord,
   SEASONS, seasonStr, hasKnownSeason, destinationActivities,
   ACTIVITY_AMENITIES, activityAmenities,
+  AREA_CHARACTER, areaCharacter, realArea, sameName,
 }
