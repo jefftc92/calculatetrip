@@ -14,8 +14,15 @@ const SITE_NAME = 'CalculateTrip'
 
 const { resorts: legacyResorts, pairOverviews: legacyPairOverviews } = require('./data/resorts')
 const { newResorts, newPairOverviews, shouldGeneratePair } = require('./data/resorts-new')
+const { buildOverview } = require('./scripts/formulaic-overview')
+const { fillResortContent } = require('./scripts/formulaic-resort')
 
 const resorts = [...legacyResorts, ...newResorts]
+
+// Fill any missing editorial fields (description, whatYouNeedToKnow,
+// bestTimeToVisit, activities) so every resort page carries the same
+// sections. Hand-authored fields are never overwritten.
+for (const r of resorts) Object.assign(r, fillResortContent(r))
 
 // Merge overviews: shards first (lowest priority), then module-level new,
 // then legacy hand-authored (highest priority, never overwritten).
@@ -123,6 +130,14 @@ const RATING_TOOLTIPS = {
   cleanliness:  'Reflects housekeeping standards across rooms and public areas. AI-analyzed from verified guest reviews.',
   service:      'Rates staff warmth, attentiveness, and responsiveness. AI-analyzed from verified guest reviews.',
   sleepQuality: 'Reflects noise levels, bed comfort, and overall quality of rest as reported by guests.',
+}
+
+// Any comparison page without a stored overview gets one written at build
+// time. buildOverview is deterministic per pair, so output is stable across
+// builds; stored (hand-authored or LLM-generated) overviews always win.
+for (const { a, b } of allComparisonPairs()) {
+  const key = `${a.slug}-vs-${b.slug}`
+  if (!pairOverviews[key]) pairOverviews[key] = buildOverview(a, b)
 }
 
 const baseLocals = {
@@ -238,6 +253,22 @@ async function build() {
       description: `Detailed comparison of ${a.name} (${a.ratings.overall}/10) and ${b.name} (${b.ratings.overall}/10). Side-by-side ratings, amenities, and editorial verdict.`,
     })
   }
+
+  // Shared dataset for the compare picker, written once and fetched by
+  // compare-pair.js. Previously this array was inlined into every compare
+  // page (~1.5MB × 59k pages); serving it as one cached file keeps the
+  // build — and each page — small.
+  const pairData = {
+    resorts: resorts.map(r => ({
+      slug: r.slug, name: r.name, country: r.country, area: r.area, type: r.type,
+      priceLevel: r.priceLevel || null, ageNote: r.ageNote || null, notes: r.notes || null,
+      ratings: r.ratings, amenities: r.amenities, agodaLink: r.agodaLink,
+      whatYouNeedToKnow: r.whatYouNeedToKnow,
+      bestTimeToVisit: r.bestTimeToVisit,
+      activities: r.activities,
+    })),
+  }
+  fs.writeFileSync(path.join(DIST, 'pair-data.json'), JSON.stringify(pairData), 'utf8')
 
   const urls = [
     '/', '/resorts/', '/compare/',
