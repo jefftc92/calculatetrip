@@ -15,8 +15,14 @@ const SITE_NAME = 'CalculateTrip'
 const { resorts: legacyResorts, pairOverviews: legacyPairOverviews } = require('./data/resorts')
 const { newResorts, newPairOverviews, shouldGeneratePair } = require('./data/resorts-new')
 const { buildOverview } = require('./scripts/formulaic-overview')
+const { fillResortContent } = require('./scripts/formulaic-resort')
 
 const resorts = [...legacyResorts, ...newResorts]
+
+// Fill any missing editorial fields (description, whatYouNeedToKnow,
+// bestTimeToVisit, activities) so every resort page carries the same
+// sections. Hand-authored fields are never overwritten.
+for (const r of resorts) Object.assign(r, fillResortContent(r))
 
 // Merge overviews: shards first (lowest priority), then module-level new,
 // then legacy hand-authored (highest priority, never overwritten).
