@@ -30,9 +30,31 @@ function listJoin(items) {
   return items.slice(0, -1).join(', ') + ' and ' + items[items.length - 1]
 }
 
+// Countries whose names take a definite article in running prose
+// ("in the Bahamas", but "in Mexico"). Bare names stay correct in
+// adjectival use ("a Bahamas all-inclusive"), so apply these helpers
+// only where the name stands alone in a sentence.
+const THE_COUNTRIES = new Set([
+  'Bahamas', 'Dominican Republic', 'United States', 'Turks and Caicos',
+  'Maldives', 'Philippines', 'British Virgin Islands', 'US Virgin Islands',
+  'United Arab Emirates', 'Cayman Islands',
+])
+
+function countryName(c) {
+  if (!c || !c.trim()) return 'the region'
+  return THE_COUNTRIES.has(c) ? `the ${c}` : c
+}
+
+function countryPossessive(c) {
+  const n = countryName(c)
+  return n.endsWith('s') ? `${n}'` : `${n}'s`
+}
+
 function locationOf(r) {
-  if (r.area && r.area !== r.country) return `${r.area}, ${r.country}`
-  return r.country || r.area || 'the region'
+  if (r.area && r.area !== r.country) {
+    return r.country ? `${r.area}, ${countryName(r.country)}` : r.area
+  }
+  return r.country ? countryName(r.country) : (r.area || 'the region')
 }
 
 function shortLoc(r) {
@@ -318,6 +340,7 @@ function activityAmenities(r, n) {
 
 module.exports = {
   hashStr, rngFor, pick, fmt, cap, listJoin, locationOf, shortLoc,
+  countryName, countryPossessive,
   CATEGORY, topRatings, weakestRating, ratingGaps, PRICE_WORDS,
   SEASONS, seasonStr, hasKnownSeason, destinationActivities,
   ACTIVITY_AMENITIES, activityAmenities,
