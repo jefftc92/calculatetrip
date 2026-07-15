@@ -19,9 +19,34 @@ const { fillResortContent } = require('./scripts/formulaic-resort')
 
 const resorts = [...legacyResorts, ...newResorts]
 
-// Fill any missing editorial fields (description, whatYouNeedToKnow,
-// bestTimeToVisit, activities) so every resort page carries the same
-// sections. Hand-authored fields are never overwritten.
+// Researched, hotel-specific editorial content (activities + what-you-need-
+// to-know, written from real knowledge of each property) lives in sharded
+// files under data/resort-content/. It overrides the formulaic fallback but
+// never overwrites hand-authored fields already on the record.
+function loadResortContent() {
+  const dir = path.join(__dirname, 'data', 'resort-content')
+  const merged = {}
+  if (fs.existsSync(dir)) {
+    for (const f of fs.readdirSync(dir).sort()) {
+      if (!/\.js$/.test(f)) continue
+      Object.assign(merged, require(path.join(dir, f)))
+    }
+  }
+  return merged
+}
+const researchedContent = loadResortContent()
+for (const r of resorts) {
+  const rc = researchedContent[r.slug]
+  if (!rc) continue
+  for (const k of ['activities', 'whatYouNeedToKnow', 'description', 'bestTimeToVisit']) {
+    if (rc[k] && (r[k] == null || String(r[k]).trim() === '')) r[k] = rc[k]
+  }
+}
+
+// Fill any still-missing editorial fields (description, whatYouNeedToKnow,
+// bestTimeToVisit, activities) with formulaic text so every resort page
+// carries the same sections. Hand-authored and researched fields are never
+// overwritten.
 for (const r of resorts) Object.assign(r, fillResortContent(r))
 
 // Merge overviews: shards first (lowest priority), then module-level new,
