@@ -1,0 +1,34 @@
+// Announced-but-unbuilt properties (null overall ratings) that are in the
+// dataset with category ratings and booking links but are not yet operating
+// as of mid-2026. Rather than describe activities at a resort that does not
+// exist, these entries state plainly that the property is forthcoming, with
+// planned features framed as plans. Details come from developer announcements
+// and are subject to change. Revisit and replace with real content once each
+// resort opens.
+
+module.exports = {
+  'beaches-exuma': {
+    activities: `There is nothing to do here yet — Beaches Exuma is not open. When it does open, the planned resort is set to include a Pirate Island waterpark, a dozen restaurants, a Red Lane Spa, Sesame Street character programming, and complimentary golf at the adjacent Greg Norman-designed course, along its mile of Great Exuma beach. Until then, nearby Great Exuma offers reef snorkeling, the famous swimming pigs, and boat trips through the Exuma Cays.`,
+    whatYouNeedToKnow: `Beaches Exuma is an announced family resort on Great Exuma in the Bahamas, not a currently operating hotel. It is the planned conversion of the former Sandals Emerald Bay into a Beaches property and is expected to open around 2027. Any category ratings shown predate the transition and do not reflect a live guest experience. Treat listings and pricing as forward-looking until an official opening is confirmed. When it opens, Great Exuma is best December through May, before hurricane season.`,
+  },
+  'beaches-saint-vincent': {
+    activities: `There is nothing to do here yet — Beaches Saint Vincent is not open. The project, planned for the Mt Wynne area, is in early design as of 2026 and is expected to bring a large family resort of roughly 500 rooms once built. Until it opens, St Vincent itself offers excellent diving and snorkeling, and boat trips into the Grenadines — the Tobago Cays and Bequia — are the signature outing from the island.`,
+    whatYouNeedToKnow: `Beaches Saint Vincent is an announced family resort, not a currently operating hotel. As of 2026 it is in early planning at Mt Wynne, a roughly US$500 million project of about 500 rooms, with an anticipated opening around 2027. Any category ratings shown do not reflect a live guest experience. Note that Sandals Saint Vincent (a separate, couples-only resort) is already open on the island. Treat listings and pricing here as forward-looking until an official opening is confirmed.`,
+  },
+  'beaches-barbados': {
+    activities: `There is nothing to do here yet — Beaches Barbados is not open. The planned resort broke ground in late 2025 and is set to offer around 600 rooms, from suites to large multi-bedroom oceanfront layouts, once built. In the meantime, Barbados delivers swimming with sea turtles and shipwrecks in Carlisle Bay, the Friday-night Oistins fish fry, Harrison's Cave, and catamaran cruises along the calm west coast.`,
+    whatYouNeedToKnow: `Beaches Barbados is an announced family resort, not a currently operating hotel. Construction began in late 2025 and no opening date has been set as of mid-2026, so it is best treated as a future property. Any category ratings shown do not reflect a live guest experience. Note that Sandals Barbados and Sandals Royal Barbados (couples-only resorts) are already open on the island. Treat listings and pricing here as forward-looking until an official opening is confirmed. Barbados sits south of the hurricane belt; December through May is best.`,
+  },
+  'le-blanc-turks-and-caicos': {
+    activities: `There is nothing to do here yet — Le Blanc Turks and Caicos is not open. Announced in 2025, this planned adults-only luxury all-inclusive is expected to bring the brand's signature spa, dining, and beachfront experience to Providenciales once built, likely around 2027 or later. Until then, the island's draws are Grace Bay Beach, barrier-reef diving and snorkeling, and boat excursions out to the surrounding cays.`,
+    whatYouNeedToKnow: `Le Blanc Turks and Caicos is an announced adults-only resort, not a currently operating hotel. The Palace Company revealed it in 2025 alongside a sister Moon Palace property, with groundbreaking expected to follow the mid-2026 opening of Moon Palace Punta Cana — putting a realistic opening around 2027 or later. Any category ratings shown do not reflect a live guest experience. Treat listings and pricing here as forward-looking until an official opening is confirmed. Turks and Caicos is best December through April.`,
+  },
+  'moon-palace-the-grand-turks-and-caicos': {
+    activities: `There is nothing to do here yet — Moon Palace The Grand Turks and Caicos is not open. Announced in 2025, this planned all-ages resort is expected to offer oceanfront suites, multiple restaurants, a spa, and extensive entertainment once built, likely around 2027 or later. In the meantime, Providenciales offers Grace Bay Beach, world-class reef diving and snorkeling, and boat trips to the cays for iguanas and snorkeling.`,
+    whatYouNeedToKnow: `Moon Palace The Grand Turks and Caicos is an announced family resort, not a currently operating hotel. The Palace Company revealed it in 2025 alongside a sister Le Blanc property, with groundbreaking expected after the mid-2026 opening of Moon Palace Punta Cana — putting a realistic opening around 2027 or later. Any category ratings shown do not reflect a live guest experience. Treat listings and pricing here as forward-looking until an official opening is confirmed. Turks and Caicos is best December through April.`,
+  },
+  'hyatt-ziva-barbados': {
+    activities: `There is nothing to do here yet — Hyatt Ziva Barbados is not open. The planned family all-inclusive is under development and expected to bring around 380 suites across several buildings, with the pools, dining, and kids' programming typical of the Ziva brand, once built. Until it opens, Barbados offers turtle snorkeling in Carlisle Bay, the Oistins fish fry, Harrison's Cave, and catamaran cruises along the west coast.`,
+    whatYouNeedToKnow: `Hyatt Ziva Barbados is an announced family resort, not a currently operating hotel. As of mid-2026 it is under construction, with completion targeted for late 2027 or 2028 — and hotel timelines of this kind commonly slip. Any category ratings shown do not reflect a live guest experience. Treat listings and pricing here as forward-looking until an official opening is confirmed. Barbados sits south of the hurricane belt, so storm risk is lower than most Caribbean islands; December through May is best.`,
+  },
+}
