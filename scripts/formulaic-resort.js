@@ -9,7 +9,7 @@
 // across builds, while varied phrasing keeps pages from reading identically.
 
 const {
-  rngFor, pick, fmt, listJoin, locationOf,
+  rngFor, pick, fmt, listJoin, locationOf, countryName, countryPossessive,
   CATEGORY, topRatings, weakestRating, PRICE_WORDS,
   seasonStr, destinationActivities, activityAmenities,
 } = require('./destinations')
@@ -135,7 +135,7 @@ function writeBestTime(r, rng) {
   const opener = region
     ? pick(rng, [
         `The best time to visit ${r.name} tracks the wider ${region} season.`,
-        `Timing a trip to ${r.name} comes down to ${region}'s climate.`,
+        `Timing a trip to ${r.name} comes down to ${countryPossessive(region)} climate.`,
         `When to book ${r.name} depends on the ${region} weather calendar.`,
       ])
     : pick(rng, [
@@ -171,7 +171,7 @@ function writeActivities(r, rng) {
   }
 
   parts.push(pick(rng, [
-    `Beyond the gates, ${r.country || 'the surrounding area'} is known for ${dest}.`,
+    `Beyond the gates, ${r.country ? countryName(r.country) : 'the surrounding area'} is known for ${dest}.`,
     `Off property, expect ${dest} within reach.`,
     `For excursions, the area offers ${dest}.`,
   ]))

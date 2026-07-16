@@ -8,7 +8,7 @@
 // but any given pair renders identically on every build.
 
 const {
-  rngFor, pick, fmt, cap, listJoin, locationOf,
+  rngFor, pick, fmt, cap, listJoin, locationOf, countryName,
   CATEGORY, topRatings, weakestRating, ratingGaps, PRICE_WORDS,
   seasonStr, destinationActivities, activityAmenities,
 } = require('./destinations')
@@ -23,14 +23,14 @@ function writeKeyDifferences(a, b, rng) {
   // 1. Geography frame
   if (sameCountry && aRealArea && bRealArea && aRealArea !== bRealArea) {
     parts.push(pick(rng, [
-      `${a.name} and ${b.name} are both in ${a.country}, but in different corners of it — ${aRealArea} versus ${bRealArea} — so the setting is part of the choice, not just the resort.`,
-      `The first fork in the road is geography: ${a.name} sits in ${aRealArea} while ${b.name} is over in ${bRealArea}, two distinctly different corners of ${a.country}.`,
-      `Both fly the ${a.country} flag, but ${a.name} (${aRealArea}) and ${b.name} (${bRealArea}) occupy different parts of the country, with different transfer times and coastal character.`,
+      `${a.name} and ${b.name} are both in ${countryName(a.country)}, but in different corners of it — ${aRealArea} versus ${bRealArea} — so the setting is part of the choice, not just the resort.`,
+      `The first fork in the road is geography: ${a.name} sits in ${aRealArea}, while ${b.name} is over in ${bRealArea}, and the two areas of ${countryName(a.country)} feel genuinely different.`,
+      `Both resorts call ${countryName(a.country)} home, but ${a.name} (${aRealArea}) and ${b.name} (${bRealArea}) sit in different parts of the country, with their own transfer times and coastal character.`,
     ]))
   } else if (sameCountry) {
-    const place = aRealArea && aRealArea === bRealArea ? `${aRealArea}, ${a.country}` : a.country
+    const place = aRealArea && aRealArea === bRealArea ? `${aRealArea}, ${countryName(a.country)}` : countryName(a.country)
     parts.push(pick(rng, [
-      `${a.name} and ${b.name} compete on the same turf — both are ${place} all-inclusives — so the destination is a wash and the decision comes down to the properties themselves.`,
+      `${a.name} and ${b.name} compete on the same turf in ${place}, so the destination is a wash and the decision comes down to the properties themselves.`,
       `With both resorts in ${place}, you aren't choosing a destination here; you're choosing between two takes on the same coastline.`,
       `${a.name} and ${b.name} share ${place} as a home base, which makes this a like-for-like matchup where the scores can do most of the talking.`,
     ]))
@@ -90,7 +90,7 @@ function writeKeyDifferences(a, b, rng) {
       if (w2 === w) {
         parts.push(pick(rng, [
           `Its advantage repeats on ${noun2}, ${fmt(wv2)} to ${fmt(lv2)}.`,
-          `The same resort also leads on ${noun2} (${fmt(wv2)} vs ${fmt(lv2)}), so the gaps point one direction.`,
+          `${w2.name} also leads on ${noun2} (${fmt(wv2)} vs ${fmt(lv2)}), so the gaps point in one direction.`,
         ]))
       } else {
         parts.push(pick(rng, [
@@ -108,14 +108,16 @@ function writeKeyDifferences(a, b, rng) {
   const aWeak = weakestRating(a, mainGapKey), bWeak = weakestRating(b, mainGapKey)
   if (aTop.length >= 2 && aWeak) {
     parts.push(pick(rng, [
-      `${a.name} is at its best on ${CATEGORY[aTop[0].k].noun} (${fmt(aTop[0].v)}) and ${CATEGORY[aTop[1].k].noun}, with ${CATEGORY[aWeak.k].noun} its softest score at ${fmt(aWeak.v)}.`,
-      `${a.name}'s card peaks at ${CATEGORY[aTop[0].k].noun} (${fmt(aTop[0].v)}) and ${CATEGORY[aTop[1].k].noun}; ${CATEGORY[aWeak.k].noun}, at ${fmt(aWeak.v)}, trails the rest.`,
+      `${a.name} is at its best when it comes to ${CATEGORY[aTop[0].k].noun} (${fmt(aTop[0].v)}) and ${CATEGORY[aTop[1].k].noun}, though ${CATEGORY[aWeak.k].noun} is its softest score at ${fmt(aWeak.v)}.`,
+      `${a.name} shines brightest on ${CATEGORY[aTop[0].k].noun} (${fmt(aTop[0].v)}) and ${CATEGORY[aTop[1].k].noun}; ${CATEGORY[aWeak.k].noun}, at ${fmt(aWeak.v)}, trails the rest.`,
+      `Guests give ${a.name} its best marks for ${CATEGORY[aTop[0].k].noun} (${fmt(aTop[0].v)}) and ${CATEGORY[aTop[1].k].noun}, and its lowest for ${CATEGORY[aWeak.k].noun} (${fmt(aWeak.v)}).`,
     ]))
   }
   if (bTop.length >= 2 && bWeak) {
     parts.push(pick(rng, [
-      `${b.name} earns its highest marks for ${CATEGORY[bTop[0].k].noun} (${fmt(bTop[0].v)}) and ${CATEGORY[bTop[1].k].noun}, while ${CATEGORY[bWeak.k].noun} (${fmt(bWeak.v)}) is the weak spot.`,
-      `For ${b.name}, ${CATEGORY[bTop[0].k].noun} (${fmt(bTop[0].v)}) and ${CATEGORY[bTop[1].k].noun} lead the card, and ${CATEGORY[bWeak.k].noun} (${fmt(bWeak.v)}) brings up the rear.`,
+      `${b.name}, for its part, earns its highest marks for ${CATEGORY[bTop[0].k].noun} (${fmt(bTop[0].v)}) and ${CATEGORY[bTop[1].k].noun}, while ${CATEGORY[bWeak.k].noun} (${fmt(bWeak.v)}) is the weak spot.`,
+      `Over at ${b.name}, ${CATEGORY[bTop[0].k].noun} (${fmt(bTop[0].v)}) and ${CATEGORY[bTop[1].k].noun} lead the card, and ${CATEGORY[bWeak.k].noun} (${fmt(bWeak.v)}) brings up the rear.`,
+      `${b.name} answers with strong ${CATEGORY[bTop[0].k].noun} (${fmt(bTop[0].v)}) and ${CATEGORY[bTop[1].k].noun}, though guests mark it down on ${CATEGORY[bWeak.k].noun} (${fmt(bWeak.v)}).`,
     ]))
   }
 
@@ -177,7 +179,7 @@ function writeWhoShouldChoose(r, other, rng, avoid = {}) {
   if (price) {
     const settings = [
       `It's a ${price} property in ${loc}.`,
-      `Expect ${price} pricing for its ${loc} address.`,
+      `Expect ${price} pricing in ${loc}.`,
     ]
     let si = Math.floor(rng() * settings.length)
     if (si === avoid.settingIdx) si = (si + 1) % settings.length
@@ -210,14 +212,14 @@ function writeWhoShouldChoose(r, other, rng, avoid = {}) {
 function writeWhenToVisit(a, b, rng) {
   if (a.country && a.country === b.country) {
     return pick(rng, [
-      `Both resorts run on ${a.country}'s weather calendar, so timing is one decision, not two. ${seasonStr(a.country)}`,
-      `Seasonality is identical here — one ${a.country} climate covers both properties. ${seasonStr(a.country)}`,
+      `Both resorts run on the same weather calendar, so timing is one decision, not two. ${seasonStr(a.country)}`,
+      `Seasonality is identical here — one climate covers both properties. ${seasonStr(a.country)}`,
       `Whichever resort wins, the calendar advice is the same. ${seasonStr(a.country)}`,
     ])
   }
   return pick(rng, [
-    `The two destinations run on different calendars. For ${a.name} in ${a.country || 'its region'}: ${seasonStr(a.country)} For ${b.name} in ${b.country || 'its region'}: ${seasonStr(b.country)}`,
-    `Timing depends on which destination you pick. ${a.country || a.name}: ${seasonStr(a.country)} ${b.country || b.name}: ${seasonStr(b.country)}`,
+    `The two destinations run on different calendars. For ${a.name} in ${a.country ? countryName(a.country) : 'its region'}: ${seasonStr(a.country)} For ${b.name} in ${b.country ? countryName(b.country) : 'its region'}: ${seasonStr(b.country)}`,
+    `Timing depends on which destination you pick. ${a.country ? cap(countryName(a.country)) : a.name}: ${seasonStr(a.country)} ${b.country ? cap(countryName(b.country)) : b.name}: ${seasonStr(b.country)}`,
   ])
 }
 
@@ -239,7 +241,7 @@ function writeActivities(a, b, rng) {
 
   if (a.country && a.country === b.country) {
     parts.push(pick(rng, [
-      `Off property, ${a.country} adds ${destinationActivities(a)}.`,
+      `Off property, ${countryName(a.country)} adds ${destinationActivities(a)}.`,
       `Beyond the resort gates, count on ${destinationActivities(a)}.`,
     ]))
   } else {
