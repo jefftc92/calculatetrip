@@ -157,12 +157,19 @@ const RATING_TOOLTIPS = {
   sleepQuality: 'Reflects noise levels, bed comfort, and overall quality of rest as reported by guests.',
 }
 
-// Any comparison page without a stored overview gets one written at build
-// time. buildOverview is deterministic per pair, so output is stable across
-// builds; stored (hand-authored or LLM-generated) overviews always win.
+// Comparison-page overviews. buildOverview is the editorial generator (flowing
+// prose, all sections). It fills any pair with no stored overview, AND replaces
+// legacy auto-generated stubs whose keyDifferences is mechanical, score-reciting
+// text ("Key ratings compare as follows… uniquely offers…", "The clearest rating
+// gap is…"). Hand-authored prose overviews are kept as-is. buildOverview is
+// deterministic per pair, so output is stable across builds.
+const CRUDE_OVERVIEW_RE = /Key ratings compare as follows|uniquely offers|appealing to guests with distinct destination|The clearest rating gap is|its weakest ratings are|as relative weak spots/
 for (const { a, b } of allComparisonPairs()) {
   const key = `${a.slug}-vs-${b.slug}`
-  if (!pairOverviews[key]) pairOverviews[key] = buildOverview(a, b)
+  const stored = pairOverviews[key]
+  if (!stored || CRUDE_OVERVIEW_RE.test(stored.keyDifferences || '')) {
+    pairOverviews[key] = buildOverview(a, b)
+  }
 }
 
 const baseLocals = {
