@@ -44,7 +44,7 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "PORT=24605 node serve.js"
+args = "kill -9 $(lsof -ti:24605 2>/dev/null) 2>/dev/null; sleep 0.5; PORT=24605 node serve.js"
 waitForPort = 24605
 
 [deployment]
