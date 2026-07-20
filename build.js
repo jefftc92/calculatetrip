@@ -158,16 +158,23 @@ const RATING_TOOLTIPS = {
 }
 
 // Comparison-page overviews. buildOverview is the editorial generator (flowing
-// prose, all sections). It fills any pair with no stored overview, AND replaces
-// legacy auto-generated stubs whose keyDifferences is mechanical, score-reciting
-// text ("Key ratings compare as follows… uniquely offers…", "The clearest rating
-// gap is…"). Hand-authored prose overviews are kept as-is. buildOverview is
-// deterministic per pair, so output is stable across builds.
-const CRUDE_OVERVIEW_RE = /Key ratings compare as follows|uniquely offers|appealing to guests with distinct destination|The clearest rating gap is|its weakest ratings are|as relative weak spots/
+// qualitative prose, all sections). It fills any pair with no stored overview,
+// AND replaces any stored overview that recites numeric rating values in its
+// prose — the ratings table sits directly above this text on the page, so
+// score-restating copy ("beach scores of 9 vs 9", "food at 6.8 vs 8.1",
+// "(9.8 vs 9.6)") adds nothing regardless of which generation batch produced
+// it. Stored overviews whose prose is score-free are kept as-is. buildOverview
+// is deterministic per pair, so output is stable across builds.
+const SCORE_RECITE_RE = /\d\.\d\s*(vs\.?|versus|to|against)\s*\d|\(\d(\.\d)?\s*(vs|versus)|\(\d\.\d\)|\bscores? \d\.\d|\brated \d\.\d|\d\.\d overall|\b\d\.\d for |score of \d\.\d|\bat \d\.\d\b|Key ratings compare as follows|uniquely offers/
+function recitesScores(o) {
+  return SCORE_RECITE_RE.test(o.keyDifferences || '')
+    || SCORE_RECITE_RE.test(o.whoShouldChooseA || '')
+    || SCORE_RECITE_RE.test(o.whoShouldChooseB || '')
+}
 for (const { a, b } of allComparisonPairs()) {
   const key = `${a.slug}-vs-${b.slug}`
   const stored = pairOverviews[key]
-  if (!stored || CRUDE_OVERVIEW_RE.test(stored.keyDifferences || '')) {
+  if (!stored || recitesScores(stored)) {
     pairOverviews[key] = buildOverview(a, b)
   }
 }
@@ -321,4 +328,48 @@ async function build() {
   console.log(`Built ${urls.length} pages to dist/`)
 }
 
-build().catch(err => { console.error(err); process.exit(1) })
+// ---------------------------------------------------------------------------
+// On-demand rendering (used by serve.js)
+// ---------------------------------------------------------------------------
+// Only "meaningful" pairs (same country/zone or same brand) are pre-built as
+// static pages; any other valid two-resort matchup is rendered at request
+// time with the same template and overview generator, so arbitrary
+// cross-country comparisons work instead of 404ing.
+
+// A pair URL slug is "<a>-vs-<b>" where both halves are resort slugs that may
+// themselves contain hyphens (but never "-vs-"). Try each "-vs-" split point.
+function resolvePairSlug(pairSlug) {
+  let idx = -1
+  while ((idx = pairSlug.indexOf('-vs-', idx + 1)) !== -1) {
+    const a = bySlug(pairSlug.slice(0, idx))
+    const b = bySlug(pairSlug.slice(idx + 4))
+    if (a && b && a.slug !== b.slug) return [a, b]
+  }
+  return null
+}
+
+async function renderComparePage(pairSlug) {
+  const resolved = resolvePairSlug(pairSlug)
+  if (!resolved) return null
+  let [a, b] = resolved
+  if (a.slug > b.slug) [a, b] = [b, a]
+  const key = `${a.slug}-vs-${b.slug}`
+  if (!pairOverviews[key] || recitesScores(pairOverviews[key])) {
+    pairOverviews[key] = buildOverview(a, b)
+  }
+  const routePath = `/compare/${key}/`
+  const inner = await render('compare-pair', { a, b, canonical: SITE_URL + routePath })
+  return render('_layout', {
+    canonical: SITE_URL + routePath,
+    title: `${a.name} vs ${b.name} 2025 | Resort Comparison | ${SITE_NAME}`,
+    description: `Detailed comparison of ${a.name} and ${b.name}. Side-by-side ratings, amenities, and editorial verdict.`,
+    body: inner,
+    activeNav: '/compare/',
+  })
+}
+
+module.exports = { renderComparePage, resolvePairSlug }
+
+if (require.main === module) {
+  build().catch(err => { console.error(err); process.exit(1) })
+}
