@@ -8,7 +8,7 @@
 // but any given pair renders identically on every build.
 
 const {
-  rngFor, pick, fmt, cap, listJoin, locationOf, countryName,
+  rngFor, pick, cap, listJoin, locationOf, countryName,
   CATEGORY, topRatings, weakestRating, ratingGaps, PRICE_WORDS,
   seasonStr, destinationActivities, activityAmenities,
 } = require('./destinations')
@@ -42,25 +42,26 @@ function writeKeyDifferences(a, b, rng) {
     ]))
   }
 
-  // 2. Overall verdict
+  // 2. Overall verdict — qualitative only; the ratings table above the text
+  // already shows every number, so the prose interprets rather than recites.
   const ao = a.ratings.overall, bo = b.ratings.overall
   if (ao != null && bo != null) {
     const d = Math.abs(ao - bo)
     const w = ao >= bo ? a : b, l = ao >= bo ? b : a
     if (d < 0.2) {
       parts.push(pick(rng, [
-        `On overall guest score they're effectively tied, ${fmt(ao)} to ${fmt(bo)}, so the separation lives in the category ratings.`,
-        `The headline numbers won't settle it — ${fmt(ao)} versus ${fmt(bo)} overall is a statistical tie.`,
+        `On overall guest score they're effectively tied, so the real separation lives in the individual categories.`,
+        `The headline scores won't settle it — overall, this is a statistical tie.`,
       ]))
     } else if (d < 0.6) {
       parts.push(pick(rng, [
-        `${w.name} holds a slim overall edge, ${fmt(w.ratings.overall)} to ${fmt(l.ratings.overall)}.`,
-        `Overall, guests give ${w.name} a modest lead: ${fmt(w.ratings.overall)} against ${fmt(l.ratings.overall)}.`,
+        `${w.name} holds a slim overall edge, though not one big enough to decide anything on its own.`,
+        `Overall, guests give ${w.name} a modest lead over ${l.name}.`,
       ]))
     } else {
       parts.push(pick(rng, [
-        `${w.name} is clearly ahead overall, ${fmt(w.ratings.overall)} to ${fmt(l.ratings.overall)} — a gap guests genuinely feel.`,
-        `The overall scores aren't close: ${fmt(w.ratings.overall)} for ${w.name} versus ${fmt(l.ratings.overall)} for ${l.name}.`,
+        `${w.name} is clearly ahead on overall guest score — a gap wide enough that guests genuinely feel it.`,
+        `The overall verdict isn't close: guests rate ${w.name} well above ${l.name}.`,
       ]))
     }
   }
@@ -75,27 +76,26 @@ function writeKeyDifferences(a, b, rng) {
   } else {
     const g = gaps[0]
     const w = g.diff > 0 ? a : b, l = g.diff > 0 ? b : a
-    const wv = g.diff > 0 ? g.av : g.bv, lv = g.diff > 0 ? g.bv : g.av
     const cat = CATEGORY[g.k]
+    const gapWord = Math.abs(g.diff) >= 1.5 ? 'decisively' : Math.abs(g.diff) >= 0.8 ? 'clearly' : 'noticeably'
     parts.push(pick(rng, [
-      `The widest split is ${cat.noun}: ${w.name} scores ${fmt(wv)} to ${l.name}'s ${fmt(lv)} — ${pick(rng, cat.consequences)}.`,
-      `${cap(cat.noun)} is where they diverge most, ${fmt(wv)} for ${w.name} against ${fmt(lv)} for ${l.name} — ${pick(rng, cat.consequences)}.`,
-      `Start with ${cat.noun}, the biggest gap on the card: ${w.name} at ${fmt(wv)}, ${l.name} at ${fmt(lv)} — ${pick(rng, cat.consequences)}.`,
+      `The widest split is ${cat.noun}, where ${w.name} ${gapWord} outscores ${l.name} — ${pick(rng, cat.consequences)}.`,
+      `${cap(cat.noun)} is where they diverge most, with ${w.name} ${gapWord} ahead — ${pick(rng, cat.consequences)}.`,
+      `Start with ${cat.noun}, the biggest gap on the card: ${w.name} comes out ${gapWord} on top — ${pick(rng, cat.consequences)}.`,
     ]))
     if (gaps.length > 1) {
       const g2 = gaps[1]
       const w2 = g2.diff > 0 ? a : b
-      const wv2 = g2.diff > 0 ? g2.av : g2.bv, lv2 = g2.diff > 0 ? g2.bv : g2.av
       const noun2 = CATEGORY[g2.k].noun
       if (w2 === w) {
         parts.push(pick(rng, [
-          `Its advantage repeats on ${noun2}, ${fmt(wv2)} to ${fmt(lv2)}.`,
-          `${w2.name} also leads on ${noun2} (${fmt(wv2)} vs ${fmt(lv2)}), so the gaps point in one direction.`,
+          `Its advantage repeats on ${noun2}.`,
+          `${w2.name} also leads on ${noun2}, so the gaps point in one direction.`,
         ]))
       } else {
         parts.push(pick(rng, [
-          `${w2.name} pushes back on ${noun2}, though, ${fmt(wv2)} to ${fmt(lv2)}, so the scorecard cuts both ways.`,
-          `It isn't one-sided: ${w2.name} answers on ${noun2}, ${fmt(wv2)} against ${fmt(lv2)}.`,
+          `${w2.name} pushes back on ${noun2}, though, so the scorecard cuts both ways.`,
+          `It isn't one-sided: ${w2.name} answers on ${noun2}.`,
         ]))
       }
     }
@@ -108,16 +108,16 @@ function writeKeyDifferences(a, b, rng) {
   const aWeak = weakestRating(a, mainGapKey), bWeak = weakestRating(b, mainGapKey)
   if (aTop.length >= 2 && aWeak) {
     parts.push(pick(rng, [
-      `${a.name} is at its best when it comes to ${CATEGORY[aTop[0].k].noun} (${fmt(aTop[0].v)}) and ${CATEGORY[aTop[1].k].noun}, though ${CATEGORY[aWeak.k].noun} is its softest score at ${fmt(aWeak.v)}.`,
-      `${a.name} shines brightest on ${CATEGORY[aTop[0].k].noun} (${fmt(aTop[0].v)}) and ${CATEGORY[aTop[1].k].noun}; ${CATEGORY[aWeak.k].noun}, at ${fmt(aWeak.v)}, trails the rest.`,
-      `Guests give ${a.name} its best marks for ${CATEGORY[aTop[0].k].noun} (${fmt(aTop[0].v)}) and ${CATEGORY[aTop[1].k].noun}, and its lowest for ${CATEGORY[aWeak.k].noun} (${fmt(aWeak.v)}).`,
+      `${a.name} is at its best when it comes to ${CATEGORY[aTop[0].k].noun} and ${CATEGORY[aTop[1].k].noun}, though ${CATEGORY[aWeak.k].noun} is its softest area.`,
+      `${a.name} shines brightest on ${CATEGORY[aTop[0].k].noun} and ${CATEGORY[aTop[1].k].noun}; ${CATEGORY[aWeak.k].noun} trails the rest of its card.`,
+      `Guests give ${a.name} its best marks for ${CATEGORY[aTop[0].k].noun} and ${CATEGORY[aTop[1].k].noun}, and its lowest for ${CATEGORY[aWeak.k].noun}.`,
     ]))
   }
   if (bTop.length >= 2 && bWeak) {
     parts.push(pick(rng, [
-      `${b.name}, for its part, earns its highest marks for ${CATEGORY[bTop[0].k].noun} (${fmt(bTop[0].v)}) and ${CATEGORY[bTop[1].k].noun}, while ${CATEGORY[bWeak.k].noun} (${fmt(bWeak.v)}) is the weak spot.`,
-      `Over at ${b.name}, ${CATEGORY[bTop[0].k].noun} (${fmt(bTop[0].v)}) and ${CATEGORY[bTop[1].k].noun} lead the card, and ${CATEGORY[bWeak.k].noun} (${fmt(bWeak.v)}) brings up the rear.`,
-      `${b.name} answers with strong ${CATEGORY[bTop[0].k].noun} (${fmt(bTop[0].v)}) and ${CATEGORY[bTop[1].k].noun}, though guests mark it down on ${CATEGORY[bWeak.k].noun} (${fmt(bWeak.v)}).`,
+      `${b.name}, for its part, earns its highest marks for ${CATEGORY[bTop[0].k].noun} and ${CATEGORY[bTop[1].k].noun}, while ${CATEGORY[bWeak.k].noun} is the weak spot.`,
+      `Over at ${b.name}, ${CATEGORY[bTop[0].k].noun} and ${CATEGORY[bTop[1].k].noun} lead the card, and ${CATEGORY[bWeak.k].noun} brings up the rear.`,
+      `${b.name} answers with strong ${CATEGORY[bTop[0].k].noun} and ${CATEGORY[bTop[1].k].noun}, though guests mark it down on ${CATEGORY[bWeak.k].noun}.`,
     ]))
   }
 
@@ -164,9 +164,9 @@ function writeWhoShouldChoose(r, other, rng, avoid = {}) {
   if (top.length >= 2) {
     const n1 = CATEGORY[top[0].k].noun, n2 = CATEGORY[top[1].k].noun
     const openers = [
-      `${r.name} is the pick for ${audience} who put ${n1} and ${n2} at the top of the list — guests score it ${fmt(top[0].v)} and ${fmt(top[1].v)} there.`,
-      `Choose ${r.name} if ${n1} is what you're really buying: at ${fmt(top[0].v)} it's the resort's calling card, with ${n2} (${fmt(top[1].v)}) close behind. It suits ${audience}.`,
-      `Book ${r.name} when ${n1} (${fmt(top[0].v)}) and ${n2} (${fmt(top[1].v)}) matter more than anything else on the card — a natural fit for ${audience}.`,
+      `${r.name} is the pick for ${audience} who put ${n1} and ${n2} at the top of the list — those are where guests rate it best.`,
+      `Choose ${r.name} if ${n1} is what you're really buying: it's the resort's calling card, with ${n2} close behind. It suits ${audience}.`,
+      `Book ${r.name} when ${n1} and ${n2} matter more than anything else on the card — a natural fit for ${audience}.`,
     ]
     let oi = Math.floor(rng() * openers.length)
     if (oi === avoid.openerIdx) oi = (oi + 1) % openers.length
@@ -178,7 +178,7 @@ function writeWhoShouldChoose(r, other, rng, avoid = {}) {
 
   if (price) {
     const settings = [
-      `It's a ${price} property in ${loc}.`,
+      `It's ${/^[aeiou]/i.test(price) ? 'an' : 'a'} ${price} property in ${loc}.`,
       `Expect ${price} pricing in ${loc}.`,
     ]
     let si = Math.floor(rng() * settings.length)
@@ -191,9 +191,9 @@ function writeWhoShouldChoose(r, other, rng, avoid = {}) {
 
   if (weak && weak.v < 7.5) {
     const caveats = [
-      `Just go in with measured expectations for ${CATEGORY[weak.k].noun} — at ${fmt(weak.v)}, it's the soft spot.`,
-      `The trade-off is ${CATEGORY[weak.k].noun} (${fmt(weak.v)}), the one category where guests consistently mark it down.`,
-      `Its rating card does dip on ${CATEGORY[weak.k].noun} (${fmt(weak.v)}), so weight that accordingly.`,
+      `Just go in with measured expectations for ${CATEGORY[weak.k].noun} — it's the soft spot.`,
+      `The trade-off is ${CATEGORY[weak.k].noun}, the one category where guests consistently mark it down.`,
+      `Its rating card does dip on ${CATEGORY[weak.k].noun}, so weight that accordingly.`,
     ]
     let ci = Math.floor(rng() * caveats.length)
     if (ci === avoid.caveatIdx) ci = (ci + 1) % caveats.length
@@ -201,8 +201,8 @@ function writeWhoShouldChoose(r, other, rng, avoid = {}) {
     parts.push(caveats[ci])
   } else if (r.ratings.overall != null && other.ratings.overall != null && r.ratings.overall >= other.ratings.overall) {
     parts.push(pick(rng, [
-      `It also carries the stronger overall score of the pair (${fmt(r.ratings.overall)}).`,
-      `At ${fmt(r.ratings.overall)} overall, it's the higher-rated of the two.`,
+      `It also carries the stronger overall score of the pair.`,
+      `Overall, it's the higher-rated of the two.`,
     ]))
   }
 
