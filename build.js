@@ -263,8 +263,12 @@ async function build() {
     })
   }
 
+  // The hub shows a capped "Popular Comparisons" link list — the picker below
+  // it reaches any pair, and every comparison page is in sitemap.xml, so this
+  // is purely a page-weight guard. Rendering all ~60K links produced a ~25MB
+  // page that made the picker unusable.
   await buildPage('/compare/', 'compare-hub', {
-    pairs: allComparisonPairs(),
+    pairs: allComparisonPairs().slice(0, 250),
   }, {
     title: `Compare All-Inclusive Resorts 2025 | Side-by-Side | ${SITE_NAME}`,
     description: 'Compare any two all-inclusive resorts side by side. Ratings for food, beach, pool, value, service, and amenities.',
