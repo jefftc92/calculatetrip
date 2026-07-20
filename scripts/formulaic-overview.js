@@ -13,135 +13,167 @@ const {
   seasonStr, destinationActivities, activityAmenities,
 } = require('./destinations')
 
+function art(word) { return /^[aeiou]/i.test(word) ? 'an' : 'a' }
+
+// ---- resort identity ----------------------------------------------------------
+// Key Differences opens with what each property actually IS — setting,
+// character, signature features — pulled from the researched
+// whatYouNeedToKnow paragraph, instead of narrating the rating table (which
+// sits directly above the text). The first sentence of every resort's
+// whatYouNeedToKnow is a concrete identity statement, so we lift its
+// predicate ("is a couples-only resort on Cable Beach with its own offshore
+// private island…") and re-use it here.
+
+const ABBREV_BEFORE_PERIOD = /(?:\b[A-Z]|\bSt|\bMr|\bMrs|\bDr|\bMt|\bFt|\bvs|\bU\.S)$/
+
+function firstSentence(text) {
+  const re = /\.\s+(?=[A-Z0-9])/g
+  let m
+  while ((m = re.exec(text))) {
+    if (ABBREV_BEFORE_PERIOD.test(text.slice(0, m.index))) continue
+    return text.slice(0, m.index)
+  }
+  return text
+}
+
+function tidyPredicate(pred) {
+  let p = pred.replace(/\s+/g, ' ').trim()
+  // Drop transfer/airport logistics — good detail for the resort page, noise
+  // in a one-line identity. pred is a single sentence, so cutting "reached
+  // via …" through to the end is safe (airport names contain initials like
+  // "Henry E. Rohlsen", so a period-bounded match would truncate mid-name).
+  p = p.replace(/,?\s*(and\s+)?(reached|served)\s+(via|by)\b.*$/i, '')
+  p = p.replace(/,?\s*(about|roughly)\s+\d+[^,;—]*?(minutes?|hours?|km|miles)[^,;—]*/i, '')
+  // Any comma-bounded clause that exists to state airport proximity
+  // ("roughly an hour from Sangster International Airport") goes too.
+  p = p.replace(/,\s*[^,;—]*\b(airport|international(\s+\([A-Z]{3}\))?)\b[^,;—]*/gi, '')
+  if (p.length > 180) {
+    const cut = Math.max(p.lastIndexOf(',', 180), p.lastIndexOf(' — ', 180), p.lastIndexOf(';', 180))
+    if (cut > 60) p = p.slice(0, cut)
+  }
+  p = p.replace(/[,;\s—]+$/, '').trim()
+  if (p.endsWith('.')) p = p.slice(0, -1)
+  return p
+}
+
+// Returns a predicate beginning with a lowercase verb ("is …", "sits on …")
+// so callers can write `${r.name} ${identityOf(r)}`.
+function identityOf(r) {
+  const priceWord = PRICE_WORDS[r.priceLevel]
+  const typeWord = r.type === 'adults-only' ? 'adults-only' : 'family-friendly'
+  const descNoun = `${priceWord ? priceWord + ' ' : ''}${typeWord} all-inclusive in ${locationOf(r)}`
+  const fallback = `is ${art(descNoun)} ${descNoun}`
+
+  const text = (r.whatYouNeedToKnow || '').trim()
+  if (!text) return fallback
+  const sentence = firstSentence(text)
+
+  let pred = null
+  if (sentence.toLowerCase().startsWith(r.name.toLowerCase())) {
+    pred = sentence.slice(r.name.length).trim()
+  }
+  if (!pred || !/^(is|sits|occupies|lies|anchors|fronts|spreads|stretches|runs)\b/i.test(pred)) {
+    // Names in prose sometimes differ slightly from the record name
+    // ("Sugar Cane Club" vs "Sugar Cane Club Hotel & Spa"); grab the
+    // predicate from the first linking verb — but only when the words
+    // before the verb are actually the resort's name, not some other
+    // subject like "Juan Gualberto Gómez Airport is…".
+    const m = sentence.match(/^(.{0,80}?)\b(is|sits|occupies|lies|anchors|fronts)\b/i)
+    if (m) {
+      const prefix = m[1].toLowerCase()
+      const nameTokens = r.name.toLowerCase().split(/[^a-z0-9]+/).filter(w => w.length > 3)
+      if (nameTokens.some(w => prefix.includes(w))) {
+        pred = sentence.slice(m.index + m[0].length - m[2].length).trim()
+      }
+    }
+  }
+  if (!pred || !/^(is|sits|occupies|lies|anchors|fronts|spreads|stretches|runs)\b/i.test(pred)) return fallback
+  // Reject logistics predicates ("is typically 20 to 30 minutes from…") that
+  // slip through when the sentence's subject phrase mentions the resort name.
+  if (/^is\s+(typically|about|roughly|around|just|only|accessible|the\s+(most\s+convenient|closest|nearest))\b/i.test(pred) || /^is\s+\d/.test(pred)) return fallback
+  const tidied = tidyPredicate(pred)
+  // If transfer/airport language survived the trims (non-comma-bounded
+  // phrasings vary too much to chase), use the generic identity instead.
+  if (/\b(airport|minutes?\s+from|hours?\s+from)\b/i.test(tidied)) return fallback
+  return tidied.length >= 25 ? tidied : fallback
+}
+
 // ---- section writers -----------------------------------------------------------
 function writeKeyDifferences(a, b, rng) {
   const parts = []
   const sameCountry = a.country && a.country === b.country
-  const aRealArea = a.area && a.area !== a.country ? a.area : null
-  const bRealArea = b.area && b.area !== b.country ? b.area : null
+  const idA = identityOf(a), idB = identityOf(b)
 
-  // 1. Geography frame
-  if (sameCountry && aRealArea && bRealArea && aRealArea !== bRealArea) {
+  // 1. What each place actually is
+  if (sameCountry) {
     parts.push(pick(rng, [
-      `${a.name} and ${b.name} are both in ${countryName(a.country)}, but in different corners of it — ${aRealArea} versus ${bRealArea} — so the setting is part of the choice, not just the resort.`,
-      `The first fork in the road is geography: ${a.name} sits in ${aRealArea}, while ${b.name} is over in ${bRealArea}, and the two areas of ${countryName(a.country)} feel genuinely different.`,
-      `Both resorts call ${countryName(a.country)} home, but ${a.name} (${aRealArea}) and ${b.name} (${bRealArea}) sit in different parts of the country, with their own transfer times and coastal character.`,
-    ]))
-  } else if (sameCountry) {
-    const place = aRealArea && aRealArea === bRealArea ? `${aRealArea}, ${countryName(a.country)}` : countryName(a.country)
-    parts.push(pick(rng, [
-      `${a.name} and ${b.name} compete on the same turf in ${place}, so the destination is a wash and the decision comes down to the properties themselves.`,
-      `With both resorts in ${place}, you aren't choosing a destination here; you're choosing between two takes on the same coastline.`,
-      `${a.name} and ${b.name} share ${place} as a home base, which makes this a like-for-like matchup where the scores can do most of the talking.`,
+      `${a.name} ${idA}. ${b.name}, meanwhile, ${idB}.`,
+      `Both call ${countryName(a.country)} home, but they're different animals: ${a.name} ${idA}, while ${b.name} ${idB}.`,
+      `Start with what each place actually is. ${a.name} ${idA}; ${b.name} ${idB}.`,
     ]))
   } else {
     parts.push(pick(rng, [
-      `${a.name} (${locationOf(a)}) and ${b.name} (${locationOf(b)}) put two different countries on the table, so flights, transfer logistics, and destination character weigh as heavily as the resorts.`,
-      `This comparison crosses borders — ${locationOf(a)} versus ${locationOf(b)} — making it a destination decision as much as a resort decision.`,
-      `${a.name} sits in ${locationOf(a)}; ${b.name} is a different trip entirely, in ${locationOf(b)}. Weigh the destinations first, then let the scores refine the call.`,
+      `${a.name} ${idA}. ${b.name}, an entirely different trip, ${idB}.`,
+      `${a.name} ${idA}, while ${b.name} ${idB} — as much a choice between destinations as between resorts.`,
+      `These are two different ideas of a vacation. ${a.name} ${idA}; ${b.name} ${idB}.`,
     ]))
   }
 
-  // 2. Overall verdict — qualitative only; the ratings table above the text
-  // already shows every number, so the prose interprets rather than recites.
-  const ao = a.ratings.overall, bo = b.ratings.overall
-  if (ao != null && bo != null) {
-    const d = Math.abs(ao - bo)
-    const w = ao >= bo ? a : b, l = ao >= bo ? b : a
-    if (d < 0.2) {
-      parts.push(pick(rng, [
-        `On overall guest score they're effectively tied, so the real separation lives in the individual categories.`,
-        `The headline scores won't settle it — overall, this is a statistical tie.`,
-      ]))
-    } else if (d < 0.6) {
-      parts.push(pick(rng, [
-        `${w.name} holds a slim overall edge, though not one big enough to decide anything on its own.`,
-        `Overall, guests give ${w.name} a modest lead over ${l.name}.`,
-      ]))
-    } else {
-      parts.push(pick(rng, [
-        `${w.name} is clearly ahead on overall guest score — a gap wide enough that guests genuinely feel it.`,
-        `The overall verdict isn't close: guests rate ${w.name} well above ${l.name}.`,
-      ]))
-    }
-  }
-
-  // 3. Category gaps
-  const gaps = ratingGaps(a, b, 0.5)
-  if (gaps.length === 0) {
-    parts.push(pick(rng, [
-      `Category by category the two track each other closely — nothing separates them by even half a point — so let price, setting, and style break the tie.`,
-      `Neither resort opens a meaningful lead in any single category; the rating cards are near mirror images, which pushes the decision toward location and price.`,
-    ]))
-  } else {
-    const g = gaps[0]
-    const w = g.diff > 0 ? a : b, l = g.diff > 0 ? b : a
-    const cat = CATEGORY[g.k]
-    const gapWord = Math.abs(g.diff) >= 1.5 ? 'decisively' : Math.abs(g.diff) >= 0.8 ? 'clearly' : 'noticeably'
-    parts.push(pick(rng, [
-      `The widest split is ${cat.noun}, where ${w.name} ${gapWord} outscores ${l.name} — ${pick(rng, cat.consequences)}.`,
-      `${cap(cat.noun)} is where they diverge most, with ${w.name} ${gapWord} ahead — ${pick(rng, cat.consequences)}.`,
-      `Start with ${cat.noun}, the biggest gap on the card: ${w.name} comes out ${gapWord} on top — ${pick(rng, cat.consequences)}.`,
-    ]))
-    if (gaps.length > 1) {
-      const g2 = gaps[1]
-      const w2 = g2.diff > 0 ? a : b
-      const noun2 = CATEGORY[g2.k].noun
-      if (w2 === w) {
-        parts.push(pick(rng, [
-          `Its advantage repeats on ${noun2}.`,
-          `${w2.name} also leads on ${noun2}, so the gaps point in one direction.`,
-        ]))
-      } else {
-        parts.push(pick(rng, [
-          `${w2.name} pushes back on ${noun2}, though, so the scorecard cuts both ways.`,
-          `It isn't one-sided: ${w2.name} answers on ${noun2}.`,
-        ]))
-      }
-    }
-  }
-
-  // 4. Profiles. If the headline gap category is also a resort's weakest,
-  // surface the next-weakest instead so one category doesn't dominate the text.
-  const mainGapKey = gaps.length ? gaps[0].k : null
-  const aTop = topRatings(a, 2), bTop = topRatings(b, 2)
-  const aWeak = weakestRating(a, mainGapKey), bWeak = weakestRating(b, mainGapKey)
-  if (aTop.length >= 2 && aWeak) {
-    parts.push(pick(rng, [
-      `${a.name} is at its best when it comes to ${CATEGORY[aTop[0].k].noun} and ${CATEGORY[aTop[1].k].noun}, though ${CATEGORY[aWeak.k].noun} is its softest area.`,
-      `${a.name} shines brightest on ${CATEGORY[aTop[0].k].noun} and ${CATEGORY[aTop[1].k].noun}; ${CATEGORY[aWeak.k].noun} trails the rest of its card.`,
-      `Guests give ${a.name} its best marks for ${CATEGORY[aTop[0].k].noun} and ${CATEGORY[aTop[1].k].noun}, and its lowest for ${CATEGORY[aWeak.k].noun}.`,
-    ]))
-  }
-  if (bTop.length >= 2 && bWeak) {
-    parts.push(pick(rng, [
-      `${b.name}, for its part, earns its highest marks for ${CATEGORY[bTop[0].k].noun} and ${CATEGORY[bTop[1].k].noun}, while ${CATEGORY[bWeak.k].noun} is the weak spot.`,
-      `Over at ${b.name}, ${CATEGORY[bTop[0].k].noun} and ${CATEGORY[bTop[1].k].noun} lead the card, and ${CATEGORY[bWeak.k].noun} brings up the rear.`,
-      `${b.name} answers with strong ${CATEGORY[bTop[0].k].noun} and ${CATEGORY[bTop[1].k].noun}, though guests mark it down on ${CATEGORY[bWeak.k].noun}.`,
-    ]))
-  }
-
-  // 5. Practicalities: price and audience
-  const ap = PRICE_WORDS[a.priceLevel], bp = PRICE_WORDS[b.priceLevel]
-  if (ap && bp) {
-    if (ap === bp) {
-      parts.push(pick(rng, [
-        `Both book at a ${ap} price point.`,
-        `Pricing won't separate them — both are ${ap} properties.`,
-      ]))
-    } else {
-      parts.push(pick(rng, [
-        `Budgets differ: ${a.name} books as a ${ap} stay while ${b.name} runs ${bp}.`,
-        `Expect different bills, too — ${a.name} is ${ap}, ${b.name} is ${bp}.`,
-      ]))
-    }
-  }
+  // 2. Structural differences: audience, then price (only when they differ —
+  // sameness is not a difference worth a sentence).
   if (a.type !== b.type) {
     const adults = a.type === 'adults-only' ? a : b
     const fam = a.type === 'adults-only' ? b : a
     parts.push(pick(rng, [
-      `And note the crowd: ${adults.name} is adults-only while ${fam.name} welcomes kids — for many travelers that alone settles it.`,
-      `One structural difference outranks every score: ${adults.name} is adults-only, ${fam.name} is family-friendly.`,
+      `The starkest practical difference is the crowd: ${adults.name} is adults-only while ${fam.name} welcomes kids — for many travelers that alone settles it.`,
+      `One structural difference outranks everything else: ${adults.name} is adults-only, ${fam.name} is family-friendly.`,
+    ]))
+  }
+  const ap = PRICE_WORDS[a.priceLevel], bp = PRICE_WORDS[b.priceLevel]
+  if (ap && bp && ap !== bp) {
+    parts.push(pick(rng, [
+      `Budgets differ too: ${a.name} books as ${art(ap)} ${ap} stay while ${b.name} runs ${bp}.`,
+      `Expect different bills — ${a.name} is ${ap}, ${b.name} is ${bp}.`,
+    ]))
+  }
+
+  // 3. At most ONE ratings insight — the single gap that genuinely matters —
+  // instead of narrating the whole scorecard.
+  const gaps = ratingGaps(a, b, 0.8)
+  const ao = a.ratings.overall, bo = b.ratings.overall
+  if (gaps.length) {
+    const g = gaps[0]
+    const w = g.diff > 0 ? a : b
+    const cat = CATEGORY[g.k]
+    const edge = Math.abs(g.diff) >= 1.5 ? 'a commanding edge' : 'a clear edge'
+    parts.push(pick(rng, [
+      `On the ratings themselves, the difference that matters most is ${cat.noun}: ${w.name} holds ${edge} there, ${pick(rng, cat.consequences)}.`,
+      `Where guest ratings genuinely separate them is ${cat.noun} — ${w.name}'s advantage is hard to ignore, ${pick(rng, cat.consequences)}.`,
+    ]))
+    if (ao != null && bo != null && Math.abs(ao - bo) >= 0.6) {
+      const ow = ao >= bo ? a : b
+      parts.push(ow === w
+        ? `Overall guest sentiment points the same way.`
+        : `Even so, overall guest sentiment favors ${ow.name}.`)
+    }
+  } else {
+    parts.push(pick(rng, [
+      `On guest ratings the two are hard to separate — the choice here is really about place and personality, not quality.`,
+      `The ratings won't make this decision for you; both hold their own, so let the destination and the style of stay decide.`,
+    ]))
+  }
+
+  // 4. How to choose, anchored in each resort's genuine strength
+  const aTop = topRatings(a, 2), bTop = topRatings(b, 2)
+  let ka = aTop[0] && aTop[0].k, kb = bTop[0] && bTop[0].k
+  if (ka && kb && ka === kb) {
+    if (bTop[1]) kb = bTop[1].k
+    if (ka === kb && aTop[1]) ka = aTop[1].k
+  }
+  if (ka && kb && ka !== kb) {
+    parts.push(pick(rng, [
+      `The clean way to choose: ${a.name} for ${CATEGORY[ka].strength}, ${b.name} for ${CATEGORY[kb].strength}.`,
+      `If one thing decides it, make it this — book ${a.name} for ${CATEGORY[ka].strength}; book ${b.name} for ${CATEGORY[kb].strength}.`,
     ]))
   }
 
@@ -178,7 +210,7 @@ function writeWhoShouldChoose(r, other, rng, avoid = {}) {
 
   if (price) {
     const settings = [
-      `It's ${/^[aeiou]/i.test(price) ? 'an' : 'a'} ${price} property in ${loc}.`,
+      `It's ${art(price)} ${price} property in ${loc}.`,
       `Expect ${price} pricing in ${loc}.`,
     ]
     let si = Math.floor(rng() * settings.length)
