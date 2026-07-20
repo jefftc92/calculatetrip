@@ -52,6 +52,9 @@ function tidyPredicate(pred) {
     if (cut > 60) p = p.slice(0, cut)
   }
   p = p.replace(/[,;\s—]+$/, '').trim()
+  // A trimmed trailing clause can leave a comma stranded inside a closing
+  // quote ('…the "Platinum Coast,"').
+  p = p.replace(/[,;]\s*(["'”’])$/, '$1')
   if (p.endsWith('.')) p = p.slice(0, -1)
   return p
 }
@@ -163,12 +166,26 @@ function writeKeyDifferences(a, b, rng) {
     ]))
   }
 
-  // 4. How to choose, anchored in each resort's genuine strength
-  const aTop = topRatings(a, 2), bTop = topRatings(b, 2)
-  let ka = aTop[0] && aTop[0].k, kb = bTop[0] && bTop[0].k
+  // 4. How to choose, anchored in each resort's genuine strength. Prefer
+  // categories people actually book FOR — cleanliness and sleep quality are
+  // table-stakes, not selling points, so they're only used as a last resort.
+  const HYGIENE = new Set(['cleanliness', 'sleepQuality'])
+  function motivatingTop(r) {
+    const tops = topRatings(r, 4)
+    return tops.find(t => !HYGIENE.has(t.k)) || tops[0]
+  }
+  function motivatingSecond(r, excludeK) {
+    const tops = topRatings(r, 4)
+    return tops.find(t => t.k !== excludeK && !HYGIENE.has(t.k)) || tops.find(t => t.k !== excludeK)
+  }
+  const aPick = motivatingTop(a), bPick = motivatingTop(b)
+  let ka = aPick && aPick.k, kb = bPick && bPick.k
   if (ka && kb && ka === kb) {
-    if (bTop[1]) kb = bTop[1].k
-    if (ka === kb && aTop[1]) ka = aTop[1].k
+    const alt = motivatingSecond(b, kb) || motivatingSecond(a, ka)
+    if (alt) {
+      if (motivatingSecond(b, kb)) kb = motivatingSecond(b, kb).k
+      else ka = motivatingSecond(a, ka).k
+    }
   }
   if (ka && kb && ka !== kb) {
     parts.push(pick(rng, [
