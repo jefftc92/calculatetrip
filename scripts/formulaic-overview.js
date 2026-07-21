@@ -47,6 +47,24 @@ function tidyPredicate(pred) {
   // Any comma-bounded clause that exists to state airport proximity
   // ("roughly an hour from Sangster International Airport") goes too.
   p = p.replace(/,\s*[^,;—]*\b(airport|international(\s+\([A-Z]{3}\))?)\b[^,;—]*/gi, '')
+  // Editorial meta-asides describe our record rather than the resort:
+  // "making it one of the more convenient properties to reach", an em-dash
+  // aside like "— about as convenient a location as exists in our database"
+  // or "— the longer transfer is the tradeoff for …".
+  p = p.replace(/,?\s*making it\b.*$/i, '')
+  p = p.replace(/\s*[—–]\s*[^—–]*\b(convenient|in our database|as exists|transfer|trade[- ]?off)\b.*$/i, '')
+  p = p.replace(/,\s*[^,;—]*\bconvenient\b[^,;—]*/gi, '')
+  // Rating-card recitations ("reflected in its 8 beach score") belong to the
+  // score table shown directly above, never to the prose identity.
+  p = p.replace(/[,—–]\s*(reflected in|as reflected|which shows|scoring)\b[^,;—]*/gi, '')
+  p = p.replace(/[,—–]\s*[^,;—]*\b\d+(\.\d+)?[- ]?(point\s+)?\w*\s*(score|rating)s?\b[^,;—]*/gi, '')
+  // A coordinating fragment ("…, and sits …") can lose its object once the
+  // airport tail behind it is cut; drop the now-dangling verb.
+  p = p.replace(/,?\s*and\s+(sits?|lies?|stands?)\s*$/i, '')
+  // Cutting a mid-sentence airport clause can weld the following em-dash aside
+  // straight onto the prior word ("beach road— closer to Negril"); restore the
+  // spacing so any surviving aside reads cleanly.
+  p = p.replace(/\s*[—–]\s*/g, ' — ')
   if (p.length > 180) {
     const cut = Math.max(p.lastIndexOf(',', 180), p.lastIndexOf(' — ', 180), p.lastIndexOf(';', 180))
     if (cut > 60) p = p.slice(0, cut)
@@ -98,6 +116,11 @@ function identityOf(r) {
   // If transfer/airport language survived the trims (non-comma-bounded
   // phrasings vary too much to chase), use the generic identity instead.
   if (/\b(airport|minutes?\s+from|hours?\s+from)\b/i.test(tidied)) return fallback
+  // Some researched first sentences ARE score summaries ("…with solid, if
+  // unspectacular, scores — beach and location both above 8.3"). Reciting the
+  // rating card in the identity is exactly what we're avoiding, so when score
+  // language or a decimal rating survives, fall back to the plain identity.
+  if (/\bscores?\b|\bratings?\b|\brat(e|es|ed|ing)\s+(well|strongly|highly|modestly|poorly)\b|\b\d\.\d\b|\bin the (mid|upper|lower|low|high)\b/i.test(tidied)) return fallback
   return tidied.length >= 25 ? tidied : fallback
 }
 
@@ -166,91 +189,216 @@ function distinctiveDraws(r, other, n = 2) {
   return signatureDraws(r).specific.filter(p => !theirs.has(p)).slice(0, n)
 }
 
-// ---- section writers -----------------------------------------------------------
-function writeKeyDifferences(a, b, rng) {
-  const parts = []
-  const sameCountry = a.country && a.country === b.country
-  const idA = identityOf(a), idB = identityOf(b)
+// ---- character / vibe ---------------------------------------------------------
+// A one-phrase read on the FEEL of a stay, detected from the researched prose.
+// Only ever used when the two resorts' characters actually differ.
+const CHARACTERS = [
+  [/lodge experience|no televisions?|\brustic\b|unplugged|off-grid|barefoot|back-to-basics/i, 'rustic, unplugged'],
+  [/clothing-optional|adults-only party|temptation|hedonis/i, 'high-energy'],
+  [/\bboutique\b|intimate|a handful of|only \d+ (rooms|suites|villas)|small-scale|deeply personal/i, 'small, intimate'],
+  [/wellness|daily yoga|holistic|plant-based|vegan-forward|mindful/i, 'wellness-focused'],
+  [/waterpark|water park|sesame street|kids'? camps|lazy river|flowrider/i, 'action-packed'],
+  [/sprawling|\bmega\b|expansive|one of the largest|hundreds of|\d\d restaurants|full spectrum|extensive amenit|mega-resort/i, 'big, full-service'],
+  [/lively|buzzing|energetic|nightclub|disco\b|flying trapeze|circus|entertainment-heavy/i, 'lively'],
+  [/tranquil|serene|secluded|peaceful|\bquiet\b|romantic|hushed|adults-only calm|slower pace/i, 'laid-back'],
+]
+function characterOf(r) {
+  const t = `${r.whatYouNeedToKnow || ''} ${r.activities || ''}`
+  for (const [re, adj] of CHARACTERS) if (re.test(t)) return adj
+  return null
+}
 
-  // 1. What each place actually is
-  if (sameCountry) {
+// Announced-but-unopened properties carry relabeled prose ("…not a currently
+// operating hotel", activities that open "There is nothing to do here yet").
+// Their category ratings and any detected "draws" are placeholders, so we must
+// never contrast activities or scores against them — the only honest
+// difference is that one resort is bookable and the other isn't yet.
+function isUnbuilt(r) {
+  const t = `${r.whatYouNeedToKnow || ''} ${r.activities || ''}`
+  return /not a currently operating hotel|there is nothing to do here yet|not yet open|is not open\b/i.test(t)
+}
+
+function priceRank(r) { return r.priceLevel ? r.priceLevel.length : 0 }
+
+function audienceAdj(r) {
+  if (r.type === 'adults-only') return /couples? only/i.test(r.ageNote || '') ? 'couples-only' : 'adults-only'
+  return 'family-friendly'
+}
+
+// The head noun for a "if you want a ___" clause. When a character or audience
+// adjective is already carrying the vibe (hasAdj), keep the noun neutral so we
+// never stack ("laid-back, adults-only getaway" — not "…laid-back retreat for
+// adults-only"). With no adjective in play, let the noun itself signal who the
+// resort is for — but an adults-only resort must never be called a "family"
+// anything.
+function tripNoun(r, rng, hasAdj) {
+  if (hasAdj) return pick(rng, ['week', 'getaway', 'stay'])
+  if (r.type === 'adults-only') return pick(rng, ['getaway', 'escape', 'retreat'])
+  return pick(rng, ['family week', 'family stay', 'family getaway'])
+}
+
+function destShort(r) {
+  if (r.area && r.area.trim() && r.area !== r.country) return `${r.area}, ${countryName(r.country)}`
+  return r.country ? countryName(r.country) : (r.area || 'the region')
+}
+
+const HYGIENE = new Set(['cleanliness', 'sleepQuality'])
+function topStrength(r) {
+  const t = topRatings(r, 4)
+  return (t.find(x => !HYGIENE.has(x.k)) || t[0] || {}).k
+}
+// A category that genuinely separates r from `other`: one of r's high marks
+// (>= 8.0) where it also beats the other resort by a clear margin. Returns
+// null when the two are matched on r's strengths — so we never hand both
+// resorts the same "for its strong location" reason when neither actually
+// leads on it.
+function distinguishingStrength(r, other) {
+  const cand = topRatings(r, 6)
+    .filter(x => !HYGIENE.has(x.k) && x.v >= 8.0)
+    .filter(x => other.ratings[x.k] != null && x.v - other.ratings[x.k] >= 0.3)
+  if (!cand.length) return null
+  cand.sort((p, q) => (q.v - other.ratings[q.k]) - (p.v - other.ratings[p.k]))
+  return cand[0].k
+}
+function bareNoun(k) { return CATEGORY[k].noun.replace(/^the\s+/, '') }
+
+// The "choose X if …" clause. Assembles only the axes flagged active in ctx —
+// character, audience, destination, signature activity, price, or (as a last
+// resort) the resort's standout rating category. Never mentions an axis the
+// two resorts share.
+function reasonFor(r, other, ctx, rng) {
+  const adjs = []
+  if (ctx.character) { const c = characterOf(r); if (c) adjs.push(c) }
+  if (ctx.audience) adjs.push(audienceAdj(r))
+  const head = (adjs.length ? adjs.join(', ') + ' ' : '') + tripNoun(r, rng, adjs.length > 0)
+  let phrase = `if you want ${art(head)} ${head}`
+  if (ctx.destination) phrase += ` in ${destShort(r)}`
+
+  const draws = ctx.activity ? distinctiveDraws(r, other, 2) : []
+  if (draws.length) {
+    phrase += ` for ${listJoin(draws)}`
+  } else if (ctx.qualityWinner === r && ctx.qualityKey) {
+    phrase += ` — its ${bareNoun(ctx.qualityKey)} is the standout`
+  } else if (adjs.length === 0 && !ctx.destination) {
+    // Nothing distinctive surfaced; anchor on a category where it actually
+    // leads the other resort — never a strength they happen to share.
+    const k = distinguishingStrength(r, other)
+    if (k) phrase += ` for its strong ${bareNoun(k)}`
+  }
+  if (ctx.cheaper === r) phrase += ', at a lower price'
+  return phrase
+}
+
+// ---- section writers -----------------------------------------------------------
+
+// When one (or both) resorts in the pair is announced but not yet open, the
+// only honest comparison is availability — contrasting activities or ratings
+// against a resort that doesn't exist would be fabrication.
+function writeUnbuiltDifference(a, b, idA, idB, aUnbuilt, bUnbuilt) {
+  const opener = `${a.name} ${idA}. ${b.name} ${idB}.`
+  if (aUnbuilt && bUnbuilt) {
+    return `${opener} Both are announced but not yet open, so there's no real guest experience to compare at either — treat this as a look ahead, not a decision between two bookable resorts.`
+  }
+  const open = aUnbuilt ? b : a
+  const soon = aUnbuilt ? a : b
+  return `${opener} The practical difference is simple: ${open.name} is open and bookable now, while ${soon.name} is still forthcoming and can't be visited yet. For a trip in the near term, ${open.name} is the only real option; keep ${soon.name} in mind only if you're planning far enough ahead for it to open.`
+}
+
+function writeKeyDifferences(a, b, rng) {
+  const idA = identityOf(a), idB = identityOf(b)
+  const aUnbuilt = isUnbuilt(a), bUnbuilt = isUnbuilt(b)
+  if (aUnbuilt || bUnbuilt) return writeUnbuiltDifference(a, b, idA, idB, aUnbuilt, bUnbuilt)
+
+  const parts = []
+
+  // --- Which axes genuinely differ (the only things worth writing about) ---
+  const sameCountry = a.country && a.country === b.country
+  const audienceDiffers = audienceAdj(a) !== audienceAdj(b)
+  const charA = characterOf(a), charB = characterOf(b)
+  const characterDiffers = charA && charB && charA !== charB
+  const aOnly = distinctiveDraws(a, b, 2), bOnly = distinctiveDraws(b, a, 2)
+  const activityDiffers = aOnly.length > 0 && bOnly.length > 0
+  const priceGap = (priceRank(a) && priceRank(b)) ? Math.abs(priceRank(a) - priceRank(b)) : 0
+  const cheaper = priceGap >= 1 ? (priceRank(a) < priceRank(b) ? a : b) : null
+  const gaps = ratingGaps(a, b, 1.0)
+  const qGap = gaps.length ? gaps[0] : null
+  const qWinner = qGap ? (qGap.diff > 0 ? a : b) : null
+
+  // --- Opening: what each resort actually is. ---
+  parts.push(sameCountry
+    ? `${a.name} ${idA}. ${b.name} ${idB}.`
+    : `${a.name} ${idA}. ${b.name}, a different trip entirely, ${idB}.`)
+
+  // --- Body + verdict. The body spotlights the single most vivid difference;
+  // the verdict turns the comparison into an explicit "choose A if …, choose
+  // B if …". The shape is chosen from which axes actually differ, so neither
+  // line ever pads with an axis the two resorts share. ---
+  const expAxis = activityDiffers ? 'activity' : characterDiffers ? 'character' : null
+  // Is there anything left to cut *both* ways in a paired verdict? (Price is a
+  // one-sided tail, but it still gives the pricier side a real counterweight.)
+  const verdictTwoSided = audienceDiffers || !sameCountry || cheaper ||
+    (characterDiffers && expAxis !== 'character') ||
+    (activityDiffers && expAxis !== 'activity')
+
+  const activityBody = () => pick(rng, [
+    `The days look nothing alike: ${listJoin(aOnly)} at ${a.name}, versus ${listJoin(bOnly)} at ${b.name}.`,
+    `You'd spend your time differently, too — ${listJoin(aOnly)} at ${a.name}, ${listJoin(bOnly)} at ${b.name}.`,
+  ])
+  const characterBody = () => pick(rng, [
+    `The feel is the real split: ${a.name} is ${charA}, ${b.name} ${charB}.`,
+    `They diverge most on atmosphere — ${a.name} feels ${charA}, ${b.name} ${charB}.`,
+  ])
+  const qualityBody = () => `The clearest gap on the rating card is ${CATEGORY[qGap.k].noun}, where ${qWinner.name} pulls ahead — ${pick(rng, CATEGORY[qGap.k].consequences)}.`
+
+  if (verdictTwoSided) {
+    // Rich case: a vivid difference to describe, plus separate axes to decide
+    // on. Body paints the top experiential (or quality) split; verdict decides
+    // on everything else.
+    if (expAxis === 'activity') parts.push(activityBody())
+    else if (expAxis === 'character') parts.push(characterBody())
+    else if (qGap) parts.push(qualityBody())
+
+    const covered = expAxis || (qGap ? 'quality' : null)
+    const qualityFree = qGap && covered !== 'quality'
+    const ctx = {
+      audience: audienceDiffers,
+      character: characterDiffers && covered !== 'character',
+      destination: !sameCountry,
+      activity: activityDiffers && covered !== 'activity',
+      qualityKey: qualityFree ? qGap.k : null,
+      qualityWinner: qualityFree ? qWinner : null,
+      cheaper,
+    }
+    const rA = reasonFor(a, b, ctx, rng), rB = reasonFor(b, a, ctx, rng)
     parts.push(pick(rng, [
-      `${a.name} ${idA}. ${b.name}, meanwhile, ${idB}.`,
-      `Both call ${countryName(a.country)} home, but they're different animals: ${a.name} ${idA}, while ${b.name} ${idB}.`,
-      `Start with what each place actually is. ${a.name} ${idA}; ${b.name} ${idB}.`,
+      `Choose ${a.name} ${rA}; choose ${b.name} ${rB}.`,
+      `The bottom line: pick ${a.name} ${rA}, and ${b.name} ${rB}.`,
+    ]))
+  } else if (expAxis === 'activity') {
+    // The activity mix is the whole story — make it the decision directly
+    // rather than describing it and then padding a hollow paired verdict.
+    const tail = qGap ? `, with ${qWinner.name} also holding the edge on ${CATEGORY[qGap.k].noun}` : ''
+    parts.push(`It comes down to how you'd spend your days: ${a.name} for ${listJoin(aOnly)}, ${b.name} for ${listJoin(bOnly)}${tail}.`)
+  } else if (expAxis === 'character') {
+    const tail = qGap ? `, though ${qWinner.name} rates a little higher on ${CATEGORY[qGap.k].noun}` : ''
+    parts.push(`It comes down to the atmosphere you want: ${a.name} for ${art(charA)} ${charA} feel, ${b.name} for ${art(charB)} ${charB} one${tail}.`)
+  } else if (qGap) {
+    // Nothing separates them but the rating card: name the gap, then say which
+    // way it points without re-listing the category.
+    parts.push(qualityBody())
+    const loser = qWinner === a ? b : a
+    parts.push(pick(rng, [
+      `That makes ${qWinner.name} the stronger all-round pick; ${loser.name} is worth it mainly if you prefer its setting or find a better rate.`,
+      `On paper ${qWinner.name} is the safer bet; go with ${loser.name} only if its location or price tilts things your way.`,
     ]))
   } else {
-    parts.push(pick(rng, [
-      `${a.name} ${idA}. ${b.name}, an entirely different trip, ${idB}.`,
-      `${a.name} ${idA}, while ${b.name} ${idB} — as much a choice between destinations as between resorts.`,
-      `These are two different ideas of a vacation. ${a.name} ${idA}; ${b.name} ${idB}.`,
-    ]))
-  }
-
-  // 2. What you'd actually do differently — the location/activity split,
-  // drawn from each resort's distinctive, bookable experiences.
-  const aOnly = distinctiveDraws(a, b, 2), bOnly = distinctiveDraws(b, a, 2)
-  const haveDraws = aOnly.length && bOnly.length
-  if (haveDraws) {
-    parts.push(pick(rng, [
-      `Day to day, the two promise different things: ${listJoin(aOnly)} at ${a.name}, versus ${listJoin(bOnly)} at ${b.name}.`,
-      `You'd spend your days differently, too — ${a.name} is the one for ${listJoin(aOnly)}, while ${b.name} leans on ${listJoin(bOnly)}.`,
-      `The activity mix diverges as well: at ${a.name}, expect ${listJoin(aOnly)}; ${b.name} counters with ${listJoin(bOnly)}.`,
-    ]))
-  }
-
-  // 3. At most ONE ratings insight — the single gap that genuinely matters —
-  // instead of narrating the whole scorecard.
-  const gaps = ratingGaps(a, b, 0.8)
-  const ao = a.ratings.overall, bo = b.ratings.overall
-  if (gaps.length) {
-    const g = gaps[0]
-    const w = g.diff > 0 ? a : b
-    const cat = CATEGORY[g.k]
-    const edge = Math.abs(g.diff) >= 1.5 ? 'a commanding edge' : 'a clear edge'
-    parts.push(pick(rng, [
-      `On the ratings themselves, the difference that matters most is ${cat.noun}: ${w.name} holds ${edge} there, ${pick(rng, cat.consequences)}.`,
-      `Where guest ratings genuinely separate them is ${cat.noun} — ${w.name}'s advantage is hard to ignore, ${pick(rng, cat.consequences)}.`,
-    ]))
-  } else if (!haveDraws) {
-    parts.push(pick(rng, [
-      `On guest ratings the two are hard to separate — the choice here is really about place and personality, not quality.`,
-      `The ratings won't make this decision for you; both hold their own, so let the destination and the style of stay decide.`,
-    ]))
-  }
-
-  // 4. Close on the single most decisive factor: audience (the hardest
-  // constraint) if it differs, else the overall guest-score edge, else — only
-  // when no activity contrast was drawn above — each resort's strongest
-  // motivating category.
-  if (a.type !== b.type) {
-    const adults = a.type === 'adults-only' ? a : b
-    const fam = a.type === 'adults-only' ? b : a
-    parts.push(pick(rng, [
-      `For many travelers, though, the simplest decider comes first: ${adults.name} is adults-only, while ${fam.name} welcomes families.`,
-      `One constraint may settle it before anything else — ${adults.name} is adults-only, ${fam.name} is built for families.`,
-    ]))
-  } else if (ao != null && bo != null && Math.abs(ao - bo) >= 0.6) {
-    const ow = ao >= bo ? a : b
-    parts.push(pick(rng, [
-      `If the call is still close, ${ow.name} carries the stronger overall guest score.`,
-      `And when it comes down to overall guest sentiment, ${ow.name} has the edge.`,
-    ]))
-  } else if (!haveDraws) {
-    const HYGIENE = new Set(['cleanliness', 'sleepQuality'])
-    const motivating = (r, exclude) => {
-      const t = topRatings(r, 4)
-      return t.find(x => x.k !== exclude && !HYGIENE.has(x.k)) || t.find(x => x.k !== exclude) || t[0]
-    }
-    const ma = motivating(a), mb0 = motivating(b)
-    let ka = ma && ma.k, kb = mb0 && mb0.k
-    if (ka && kb && ka === kb) { const alt = motivating(b, kb); if (alt) kb = alt.k }
-    if (ka && kb && ka !== kb) {
-      parts.push(pick(rng, [
-        `Past that, ${a.name} leans on ${CATEGORY[ka].strength}, ${b.name} on ${CATEGORY[kb].strength}.`,
-        `Beyond that, the pull is ${CATEGORY[ka].strength} at ${a.name}, ${CATEGORY[kb].strength} at ${b.name}.`,
-      ]))
-    }
+    // Genuinely matched on everything measurable — say so, but still point at
+    // whichever slim edge exists rather than calling it a pure coin flip.
+    const dA = distinguishingStrength(a, b), dB = distinguishingStrength(b, a)
+    if (dA && !dB) parts.push(`They're closely matched overall; ${a.name} edges it on ${CATEGORY[dA].noun}.`)
+    else if (dB && !dA) parts.push(`They're closely matched overall; ${b.name} edges it on ${CATEGORY[dB].noun}.`)
+    else if (dA && dB) parts.push(`They're closely matched overall — ${a.name} leans stronger on ${CATEGORY[dA].noun}, ${b.name} on ${CATEGORY[dB].noun}.`)
+    else parts.push(`On the big measures the two are closely matched, so the call really comes down to setting and personal preference.`)
   }
 
   return parts.join(' ')
