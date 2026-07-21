@@ -101,6 +101,71 @@ function identityOf(r) {
   return tidied.length >= 25 ? tidied : fallback
 }
 
+// ---- signature draws ----------------------------------------------------------
+// The distinctive, bookable experiences each resort is known for, detected
+// from its researched activities + whatYouNeedToKnow prose. Specific named
+// draws (the Cane Bay wall, the blue holes, cenotes) rank above generic
+// categories (diving, a spa) that most resorts share. Used to contrast what
+// you'd actually DO differently at each — the real location/activity split —
+// rather than narrating the rating card.
+const DRAWS = [
+  // iconic, one-of-a-kind draws
+  [/blue holes?/i, 'the blue holes'],
+  [/swimming[ -]pigs/i, 'the swimming pigs'],
+  [/cenote/i, 'cenote swims'],
+  [/chich[eé]n|coba|mayan ruins|tulum ruins|maya ruins/i, 'Mayan ruins'],
+  [/\bpitons?\b/i, 'the Pitons'],
+  [/dunn'?s river/i, "Dunn's River Falls"],
+  [/marietas/i, 'the Marietas Islands'],
+  [/bianca c\b/i, 'the Bianca C wreck dive'],
+  [/underwater sculpture/i, 'the Underwater Sculpture Park'],
+  [/crystal cave/i, 'the Crystal Caves'],
+  // strong activity-type differentiators
+  [/whale[ -]?watch/i, 'whale watching'],
+  [/\bcasino\b/i, 'a casino'],
+  [/golf/i, 'golf'],
+  [/water[ -]?park|pirates island water|lazy river|flowrider|surf simulator/i, 'a waterpark'],
+  [/kitesurf|kiteboard|kite school/i, 'kitesurfing'],
+  [/\bsurf(ing|ers?| boards?| breaks?| lessons?| camp| town)/i, 'surfing'],
+  [/ziplin|canopy tour/i, 'ziplining'],
+  [/over[- ]?water (bungalow|villa|suite)/i, 'overwater bungalows'],
+  [/offshore (private )?island|private cay|its own .{0,12}island/i, 'an offshore private island'],
+  [/flying trapeze|circus (program|workshop|clinic)/i, 'a flying trapeze'],
+  [/hot springs?|volcanic (vent|spring)/i, 'hot springs'],
+  [/rainforest|jungle (tour|excursion|hike)/i, 'rainforest excursions'],
+  [/bonefish/i, 'bonefishing'],
+  // named reefs / dive sites
+  [/(barrier|mesoamerican) reef/i, 'the barrier reef'],
+  [/buck island/i, 'Buck Island reef'],
+  [/cane bay/i, 'the Cane Bay wall'],
+  [/champagne reef/i, 'Champagne Reef'],
+  [/saona|catalina island/i, 'catamaran trips to the islands'],
+  // generic categories many resorts share — only surface if nothing rarer
+  [/scuba|\bdiv(e|ing|ers?)\b/i, 'scuba diving', true],
+  [/snorkel/i, 'snorkeling', true],
+  [/\bspa\b/i, 'the spa', true],
+  [/kids'? club|sesame street|teen club/i, "kids' clubs", true],
+  [/nightclub|disco\b|nightlife/i, 'nightlife', true],
+  [/\btennis\b/i, 'tennis', true],
+]
+
+function signatureDraws(r) {
+  const text = `${r.activities || ''} ${r.whatYouNeedToKnow || ''}`
+  const specific = [], generic = []
+  for (const [re, phrase, isGeneric] of DRAWS) {
+    if (re.test(text)) (isGeneric ? generic : specific).push(phrase)
+  }
+  return { specific, generic, all: [...specific, ...generic] }
+}
+
+// Draws unique to `r` versus `other` — the things you'd do at one and not the
+// other. Specific draws only: a shared category (both dive, both have a spa)
+// is not a difference worth writing, so generics are never contrasted.
+function distinctiveDraws(r, other, n = 2) {
+  const theirs = new Set(signatureDraws(other).all)
+  return signatureDraws(r).specific.filter(p => !theirs.has(p)).slice(0, n)
+}
+
 // ---- section writers -----------------------------------------------------------
 function writeKeyDifferences(a, b, rng) {
   const parts = []
@@ -122,21 +187,15 @@ function writeKeyDifferences(a, b, rng) {
     ]))
   }
 
-  // 2. Structural differences: audience, then price (only when they differ —
-  // sameness is not a difference worth a sentence).
-  if (a.type !== b.type) {
-    const adults = a.type === 'adults-only' ? a : b
-    const fam = a.type === 'adults-only' ? b : a
+  // 2. What you'd actually do differently — the location/activity split,
+  // drawn from each resort's distinctive, bookable experiences.
+  const aOnly = distinctiveDraws(a, b, 2), bOnly = distinctiveDraws(b, a, 2)
+  const haveDraws = aOnly.length && bOnly.length
+  if (haveDraws) {
     parts.push(pick(rng, [
-      `The starkest practical difference is the crowd: ${adults.name} is adults-only while ${fam.name} welcomes kids — for many travelers that alone settles it.`,
-      `One structural difference outranks everything else: ${adults.name} is adults-only, ${fam.name} is family-friendly.`,
-    ]))
-  }
-  const ap = PRICE_WORDS[a.priceLevel], bp = PRICE_WORDS[b.priceLevel]
-  if (ap && bp && ap !== bp) {
-    parts.push(pick(rng, [
-      `Budgets differ too: ${a.name} books as ${art(ap)} ${ap} stay while ${b.name} runs ${bp}.`,
-      `Expect different bills — ${a.name} is ${ap}, ${b.name} is ${bp}.`,
+      `Day to day, the two promise different things: ${listJoin(aOnly)} at ${a.name}, versus ${listJoin(bOnly)} at ${b.name}.`,
+      `You'd spend your days differently, too — ${a.name} is the one for ${listJoin(aOnly)}, while ${b.name} leans on ${listJoin(bOnly)}.`,
+      `The activity mix diverges as well: at ${a.name}, expect ${listJoin(aOnly)}; ${b.name} counters with ${listJoin(bOnly)}.`,
     ]))
   }
 
@@ -153,45 +212,45 @@ function writeKeyDifferences(a, b, rng) {
       `On the ratings themselves, the difference that matters most is ${cat.noun}: ${w.name} holds ${edge} there, ${pick(rng, cat.consequences)}.`,
       `Where guest ratings genuinely separate them is ${cat.noun} — ${w.name}'s advantage is hard to ignore, ${pick(rng, cat.consequences)}.`,
     ]))
-    if (ao != null && bo != null && Math.abs(ao - bo) >= 0.6) {
-      const ow = ao >= bo ? a : b
-      parts.push(ow === w
-        ? `Overall guest sentiment points the same way.`
-        : `Even so, overall guest sentiment favors ${ow.name}.`)
-    }
-  } else {
+  } else if (!haveDraws) {
     parts.push(pick(rng, [
       `On guest ratings the two are hard to separate — the choice here is really about place and personality, not quality.`,
       `The ratings won't make this decision for you; both hold their own, so let the destination and the style of stay decide.`,
     ]))
   }
 
-  // 4. How to choose, anchored in each resort's genuine strength. Prefer
-  // categories people actually book FOR — cleanliness and sleep quality are
-  // table-stakes, not selling points, so they're only used as a last resort.
-  const HYGIENE = new Set(['cleanliness', 'sleepQuality'])
-  function motivatingTop(r) {
-    const tops = topRatings(r, 4)
-    return tops.find(t => !HYGIENE.has(t.k)) || tops[0]
-  }
-  function motivatingSecond(r, excludeK) {
-    const tops = topRatings(r, 4)
-    return tops.find(t => t.k !== excludeK && !HYGIENE.has(t.k)) || tops.find(t => t.k !== excludeK)
-  }
-  const aPick = motivatingTop(a), bPick = motivatingTop(b)
-  let ka = aPick && aPick.k, kb = bPick && bPick.k
-  if (ka && kb && ka === kb) {
-    const alt = motivatingSecond(b, kb) || motivatingSecond(a, ka)
-    if (alt) {
-      if (motivatingSecond(b, kb)) kb = motivatingSecond(b, kb).k
-      else ka = motivatingSecond(a, ka).k
-    }
-  }
-  if (ka && kb && ka !== kb) {
+  // 4. Close on the single most decisive factor: audience (the hardest
+  // constraint) if it differs, else the overall guest-score edge, else — only
+  // when no activity contrast was drawn above — each resort's strongest
+  // motivating category.
+  if (a.type !== b.type) {
+    const adults = a.type === 'adults-only' ? a : b
+    const fam = a.type === 'adults-only' ? b : a
     parts.push(pick(rng, [
-      `The clean way to choose: ${a.name} for ${CATEGORY[ka].strength}, ${b.name} for ${CATEGORY[kb].strength}.`,
-      `If one thing decides it, make it this — book ${a.name} for ${CATEGORY[ka].strength}; book ${b.name} for ${CATEGORY[kb].strength}.`,
+      `For many travelers, though, the simplest decider comes first: ${adults.name} is adults-only, while ${fam.name} welcomes families.`,
+      `One constraint may settle it before anything else — ${adults.name} is adults-only, ${fam.name} is built for families.`,
     ]))
+  } else if (ao != null && bo != null && Math.abs(ao - bo) >= 0.6) {
+    const ow = ao >= bo ? a : b
+    parts.push(pick(rng, [
+      `If the call is still close, ${ow.name} carries the stronger overall guest score.`,
+      `And when it comes down to overall guest sentiment, ${ow.name} has the edge.`,
+    ]))
+  } else if (!haveDraws) {
+    const HYGIENE = new Set(['cleanliness', 'sleepQuality'])
+    const motivating = (r, exclude) => {
+      const t = topRatings(r, 4)
+      return t.find(x => x.k !== exclude && !HYGIENE.has(x.k)) || t.find(x => x.k !== exclude) || t[0]
+    }
+    const ma = motivating(a), mb0 = motivating(b)
+    let ka = ma && ma.k, kb = mb0 && mb0.k
+    if (ka && kb && ka === kb) { const alt = motivating(b, kb); if (alt) kb = alt.k }
+    if (ka && kb && ka !== kb) {
+      parts.push(pick(rng, [
+        `Past that, ${a.name} leans on ${CATEGORY[ka].strength}, ${b.name} on ${CATEGORY[kb].strength}.`,
+        `Beyond that, the pull is ${CATEGORY[ka].strength} at ${a.name}, ${CATEGORY[kb].strength} at ${b.name}.`,
+      ]))
+    }
   }
 
   return parts.join(' ')
