@@ -143,37 +143,38 @@ function identityOf(r) {
 // you'd actually DO differently at each — the real location/activity split —
 // rather than narrating the rating card.
 const DRAWS = [
-  // iconic, one-of-a-kind draws
-  [/blue holes?/i, 'the blue holes'],
-  [/swimming[ -]pigs/i, 'the swimming pigs'],
-  [/cenote/i, 'cenote swims'],
-  [/chich[eé]n|coba|mayan ruins|tulum ruins|maya ruins/i, 'Mayan ruins'],
-  [/\bpitons?\b/i, 'the Pitons'],
-  [/dunn'?s river/i, "Dunn's River Falls"],
-  [/marietas/i, 'the Marietas Islands'],
-  [/bianca c\b/i, 'the Bianca C wreck dive'],
-  [/underwater sculpture/i, 'the Underwater Sculpture Park'],
-  [/crystal cave/i, 'the Crystal Caves'],
+  // iconic, one-of-a-kind draws (kept plain-English so a non-expert reader
+  // knows what each one actually is)
+  [/blue holes?/i, 'diving in deep underwater caves'],
+  [/swimming[ -]pigs/i, 'the famous swimming pigs'],
+  [/cenote/i, 'swimming in freshwater cave pools'],
+  [/chich[eé]n|coba|mayan ruins|tulum ruins|maya ruins/i, 'ancient Maya ruins'],
+  [/\bpitons?\b/i, 'the Piton mountains'],
+  [/dunn'?s river/i, "climbing Dunn's River Falls"],
+  [/marietas/i, 'boat trips to the Marietas Islands'],
+  [/bianca c\b/i, 'a famous shipwreck dive'],
+  [/underwater sculpture/i, 'an underwater sculpture park'],
+  [/crystal cave/i, 'the underground Crystal Caves'],
   // strong activity-type differentiators
   [/whale[ -]?watch/i, 'whale watching'],
   [/\bcasino\b/i, 'a casino'],
   [/golf/i, 'golf'],
-  [/water[ -]?park|pirates island water|lazy river|flowrider|surf simulator/i, 'a waterpark'],
+  [/water[ -]?park|pirates island water|lazy river|flowrider|surf simulator/i, 'a water park'],
   [/kitesurf|kiteboard|kite school/i, 'kitesurfing'],
   [/\bsurf(ing|ers?| boards?| breaks?| lessons?| camp| town)/i, 'surfing'],
-  [/ziplin|canopy tour/i, 'ziplining'],
+  [/ziplin|canopy tour/i, 'zip-lining'],
   [/over[- ]?water (bungalow|villa|suite)/i, 'overwater bungalows'],
-  [/offshore (private )?island|private cay|its own .{0,12}island/i, 'an offshore private island'],
+  [/offshore (private )?island|private cay|its own .{0,12}island/i, 'its own private island'],
   [/flying trapeze|circus (program|workshop|clinic)/i, 'a flying trapeze'],
-  [/hot springs?|volcanic (vent|spring)/i, 'hot springs'],
-  [/rainforest|jungle (tour|excursion|hike)/i, 'rainforest excursions'],
-  [/bonefish/i, 'bonefishing'],
+  [/hot springs?|volcanic (vent|spring)/i, 'natural hot springs'],
+  [/rainforest|jungle (tour|excursion|hike)/i, 'rainforest trips'],
+  [/bonefish/i, 'shallow-water fly fishing'],
   // named reefs / dive sites
   [/(barrier|mesoamerican) reef/i, 'the barrier reef'],
-  [/buck island/i, 'Buck Island reef'],
-  [/cane bay/i, 'the Cane Bay wall'],
-  [/champagne reef/i, 'Champagne Reef'],
-  [/saona|catalina island/i, 'catamaran trips to the islands'],
+  [/buck island/i, 'snorkeling the Buck Island reef'],
+  [/cane bay/i, 'wall diving at Cane Bay'],
+  [/champagne reef/i, 'snorkeling over warm volcanic springs at Champagne Reef'],
+  [/saona|catalina island/i, 'catamaran trips to nearby islands'],
   // generic categories many resorts share — only surface if nothing rarer
   [/scuba|\bdiv(e|ing|ers?)\b/i, 'scuba diving', true],
   [/snorkel/i, 'snorkeling', true],
@@ -227,6 +228,15 @@ function characterOf(r) {
 function isUnbuilt(r) {
   const t = `${r.whatYouNeedToKnow || ''} ${r.activities || ''}`
   return /not a currently operating hotel|there is nothing to do here yet|not yet open|is not open\b/i.test(t)
+}
+
+// True when a resort's identity sentence already names what a draw refers to,
+// so the cross-country on-site line can skip repeating it.
+function identityHasDraw(idText, draw) {
+  const skip = new Set(['deep', 'with', 'from', 'your', 'over', 'into', 'that', 'this', 'famous', 'ancient'])
+  const words = (draw || '').toLowerCase().match(/[a-z]{4,}/g) || []
+  const t = (idText || '').toLowerCase()
+  return words.some(w => !skip.has(w) && t.includes(w))
 }
 
 function priceRank(r) { return r.priceLevel ? r.priceLevel.length : 0 }
@@ -286,23 +296,9 @@ function bareNoun(k) { return CATEGORY[k].noun.replace(/^the\s+/, '') }
 // biggest real difference); same-country pairs lead with the trip's character
 // and the resort's own distinctive draws. Never mentions a shared axis.
 function reasonFor(r, other, ctx, rng) {
-  // Cross-destination: the reason to pick is the destination itself.
-  if (ctx.destination) {
-    const draw = destinationDrawShort(r)
-    // Draws that already begin with an article ("the Pitons", "a beach for
-    // every day") shouldn't get "its" bolted in front of them.
-    const drawPhrase = /^(the|a|an|its)\b/i.test(draw) ? draw : `its ${draw}`
-    let phrase = draw
-      ? `if you're drawn to ${countryName(r.country)} and ${drawPhrase}`
-      : `if ${countryName(r.country)} is where you'd rather be`
-    if (ctx.audience) phrase += `, as ${art(audienceAdj(r))} ${audienceAdj(r)} trip`
-    if (ctx.qualityWinner === r && ctx.qualityKey) phrase += `, and it has the better ${bareNoun(ctx.qualityKey)} of the two`
-    if (ctx.cheaper === r) phrase += ', at a lower price'
-    return phrase
-  }
-
-  // Same-country: character + audience + the trip noun, then a distinctive
-  // draw or a rating category where it actually leads.
+  // Same-country only: character + audience + the trip noun, then a distinctive
+  // draw or a rating category where it actually leads. (Cross-destination pairs
+  // build their verdict inline, keyed on the destination.)
   const adjs = []
   if (ctx.character) { const c = characterOf(r); if (c) adjs.push(c) }
   if (ctx.audience) adjs.push(audienceAdj(r))
@@ -362,26 +358,35 @@ function writeKeyDifferences(a, b, rng) {
   // --- Opening: what each resort actually is. ---
   parts.push(`${a.name} ${idA}. ${b.name} ${idB}.`)
 
-  // --- Cross-destination path: the setting (landscape + what you do there) is
-  // the single biggest difference, so it leads and the verdict turns on it. ---
+  // --- Cross-destination path: the biggest difference is where you'd be.
+  // Built from short, single-idea sentences (no long run-ons), with the
+  // landscape described in plain terms and the audience stated outright. ---
   if (!sameCountry) {
-    parts.push(pick(rng, [
-      `The two settings are nothing alike. ${cap(settingLabel(a))} is ${destinationCharacter(a)}; ${settingLabel(b)} is ${destinationCharacter(b)}.`,
-      `Start with where you'd actually be. ${cap(settingLabel(a))} is ${destinationCharacter(a)}, while ${settingLabel(b)} is ${destinationCharacter(b)}.`,
-    ]))
-    if (activityDiffers) {
-      parts.push(pick(rng, [
-        `On site they pull different ways too: ${listJoin(aOnly)} at ${a.name}, ${listJoin(bOnly)} at ${b.name}.`,
-        `The resorts themselves differ as well: ${listJoin(aOnly)} at ${a.name} against ${listJoin(bOnly)} at ${b.name}.`,
-      ]))
-    } else if (characterDiffers) {
-      parts.push(`They feel different, too: ${a.name} is ${charA}, ${b.name} ${charB}.`)
+    parts.push(`${cap(settingLabel(a))} is ${destinationCharacter(a)}.`)
+    parts.push(`${cap(settingLabel(b))} is ${destinationCharacter(b)}.`)
+    // Audience, plainly: contrast when it differs, state it once when shared.
+    parts.push(audienceDiffers
+      ? `${a.name} is ${audienceAdj(a)}; ${b.name} is ${audienceAdj(b)}.`
+      : `Both are ${audienceAdj(a)} resorts.`)
+    // One short line on the sharpest on-site difference, if there is one.
+    // Skip a draw the identity sentence already named (no "…full casino… has a
+    // casino" echo), and never repeat the long resort names for nothing.
+    const aDraw = activityDiffers && !identityHasDraw(idA, aOnly[0]) ? aOnly[0] : null
+    const bDraw = activityDiffers && !identityHasDraw(idB, bOnly[0]) ? bOnly[0] : null
+    if (aDraw && bDraw) parts.push(`On site, ${a.name} has ${aDraw}; ${b.name} has ${bDraw}.`)
+    else if (aDraw) parts.push(`${a.name} is known for ${aDraw}.`)
+    else if (bDraw) parts.push(`${b.name} is known for ${bDraw}.`)
+    else if (characterDiffers) parts.push(`In feel, ${a.name} is ${charA} and ${b.name} is ${charB}.`)
+    // Verdict: it comes down to the destination. One short tiebreaker if warranted.
+    parts.push(`It comes down to the destination: choose ${a.name} for ${countryName(a.country)}, ${b.name} for ${countryName(b.country)}.`)
+    const tie = []
+    if (qGap && cheaper && qWinner === cheaper) {
+      tie.push(`${qWinner.name} rates higher for ${CATEGORY[qGap.k].noun} and costs less`)
+    } else {
+      if (qGap) tie.push(`${qWinner.name} rates higher for ${CATEGORY[qGap.k].noun}`)
+      if (cheaper) tie.push(`${cheaper.name} costs less`)
     }
-    const ctx = {
-      audience: audienceDiffers, character: false, destination: true, activity: false,
-      qualityKey: qGap ? qGap.k : null, qualityWinner: qGap ? qWinner : null, cheaper,
-    }
-    parts.push(`Choose ${a.name} ${reasonFor(a, b, ctx, rng)}. Choose ${b.name} ${reasonFor(b, a, ctx, rng)}.`)
+    if (tie.length) parts.push(`${cap(listJoin(tie))}.`)
     return parts.join(' ')
   }
 
@@ -391,12 +396,19 @@ function writeKeyDifferences(a, b, rng) {
   const areaA = (a.area || '').trim(), areaB = (b.area || '').trim()
   const diffArea = areaA && areaB && areaA.toLowerCase() !== areaB.toLowerCase()
   const destA = destinationCharacter(a), destB = destinationCharacter(b)
+  // State the shared audience here (family vs adults) since a same-audience
+  // pair never surfaces it in the verdict; a differing audience is carried by
+  // the verdict instead.
+  // "Both are family-friendly resorts in X" when audience is shared; a plain
+  // "Both are in X" when it differs (the verdict carries the audience then).
+  const bothIn = audienceDiffers
+    ? `Both are in ${countryName(a.country)}`
+    : `Both are ${audienceAdj(a)} resorts in ${countryName(a.country)}`
   if (destA !== destB) {
-    parts.push(`Both are in ${countryName(a.country)}, but on very different stretches of it: ${areaA || a.name} is ${destA}, while ${areaB || b.name} is ${destB}.`)
-  } else if (diffArea) {
-    parts.push(`Both are in ${countryName(a.country)}, ${destA}, though in different spots, ${a.name} in ${areaA} and ${b.name} in ${areaB}.`)
+    parts.push(`${bothIn}, but in very different parts. ${cap(areaA || a.name)} is ${destA}. ${cap(areaB || b.name)} is ${destB}.`)
   } else {
-    parts.push(`Both sit in ${countryName(a.country)}, ${destA}.`)
+    parts.push(`${bothIn}, ${destA}.`)
+    if (diffArea) parts.push(`${a.name} is in ${areaA}, ${b.name} in ${areaB}.`)
   }
 
   // The body spotlights the sharpest resort-level difference; the verdict makes

@@ -267,48 +267,48 @@ function hasKnownSeason(country) {
 function destinationActivities(r) {
   const area = (r.area || '').toLowerCase()
   if (r.country === 'Mexico') {
-    if (/cabo|baja/.test(area)) return 'marlin fishing, whale watching in winter, and boat trips to the Arch at Land’s End'
-    if (/vallarta|nayarit|punta mita|sayulita/.test(area)) return 'whale watching, ziplining in the Sierra Madre foothills, and the Malecón in town'
-    if (/cancun|riviera|playa|tulum|cozumel|mujeres|maroma|akumal|costa mujeres|puerto morelos/.test(area)) return 'cenote swims, reef snorkeling, and Mayan ruins from Tulum to Chichén Itzá'
-    return 'watersports, sportfishing, and regional day trips'
+    if (/cabo|baja/.test(area)) return 'deep-sea fishing, whale watching in winter, and boat trips to the Arch, the famous rock formation at the tip of the peninsula'
+    if (/vallarta|nayarit|punta mita|sayulita/.test(area)) return 'whale watching, zip-lining in the jungle-covered hills, and strolling the seafront boardwalk in town'
+    if (/cancun|riviera|playa|tulum|cozumel|mujeres|maroma|akumal|costa mujeres|puerto morelos/.test(area)) return 'swimming in cenotes (natural freshwater pools in the rock), snorkeling the reef, and visiting ancient Maya ruins like Tulum and Chichén Itzá'
+    return 'water sports, fishing trips, and local day trips'
   }
   const MAP = {
-    'Dominican Republic': 'catamaran trips to Saona Island, ziplining, and championship golf around Punta Cana',
-    'Jamaica': "Dunn's River Falls, Martha Brae river rafting, and catamaran sunset cruises",
-    'Cuba': 'classic-car city tours, day trips to Havana or Trinidad, and reef snorkeling',
-    'Saint Lucia': 'the Pitons, Soufrière’s drive-in volcano and mud baths, and rainforest ziplines',
-    'Barbados': "swimming with sea turtles, Harrison's Cave, and the Friday-night Oistins fish fry",
-    'Brazil': 'beach-buggy dune rides, boat trips along the coast, and samba and capoeira culture',
-    'Antigua': 'a different beach for every day of the year, English Harbour’s naval history, and Shirley Heights sunset parties',
-    'Costa Rica': 'ziplining, surf lessons, and wildlife spotting in nearby national parks',
-    'Aruba': 'catamaran snorkel cruises to the Antilla shipwreck, jeep tours through Arikok National Park, and reliably calm water at Palm and Eagle Beach',
-    'Colombia': 'Cartagena’s walled Old Town, Rosario Islands boat trips, and salsa nightlife',
-    'Turks and Caicos': 'Grace Bay watersports, barrier-reef diving and snorkeling, and conch-shack dining',
-    'Bahamas': 'reef snorkeling, swimming-pigs excursions, and Nassau day trips',
-    'Curaçao': 'shore diving, UNESCO-listed Willemstad, and boat trips to Klein Curaçao',
-    'Curacao': 'shore diving, UNESCO-listed Willemstad, and boat trips to Klein Curacao',
-    'Belize': 'trips out to the Belize Barrier Reef, cave tubing, and Mayan ruins',
-    'Panama': 'island-hopping in Bocas del Toro or the Pearl Islands, plus rainforest and canal day trips',
-    'Honduras': 'world-class diving on the Mesoamerican Reef off Roatán',
-    'Grenada': 'spice-plantation tours, waterfall hikes, and the Underwater Sculpture Park',
-    'Bonaire': 'some of the world’s best shore diving, right off the beach',
-    'Bermuda': 'pink-sand beaches, the Crystal Caves, and golf',
-    'Dominica': 'waterfall hikes, hot springs, and whale watching',
-    'Saint Martin': 'beach-hopping across the French and Dutch sides and plane watching at Maho Beach',
-    'British Virgin Islands': 'island-hopping by boat and the granite Baths on Virgin Gorda',
-    'Saint Vincent': 'sailing the Grenadines and black-sand-beach exploring',
-    'Grand Cayman': 'Stingray City, Seven Mile Beach, and wreck diving',
-    'Saint Croix': 'snorkeling at Buck Island reef and exploring Danish-colonial Christiansted',
-    'Saint Thomas': 'Magens Bay, duty-free shopping in Charlotte Amalie, and ferries to St. John',
-    'Guatemala': 'Pacific surf, volcano hikes, and colonial Antigua Guatemala day trips',
-    'Nicaraugua': 'Pacific surf breaks and volcano hikes',
-    'El Salvador': 'the surf breaks around El Tunco and volcano hikes',
-    'Ecuador': 'whale watching in season and coastal national parks',
-    'Peru': 'coastal ceviche culture and pre-Columbian sites',
-    'Maldives': 'house-reef snorkeling, sandbank picnics, and dolphin cruises',
+    'Dominican Republic': 'boat trips to nearby Saona Island, zip-lining, and golf',
+    'Jamaica': "climbing Dunn's River Falls, bamboo rafting down the Martha Brae river, and sunset cruises",
+    'Cuba': 'vintage-car tours of the cities, day trips to old Havana, and snorkeling the reef',
+    'Saint Lucia': 'seeing the Pitons (two dramatic volcanic peaks), the drive-in volcano and warm mud baths at Soufrière, and rainforest zip-lines',
+    'Barbados': "swimming with sea turtles, exploring Harrison's Cave, and the Friday-night fish fry at Oistins",
+    'Brazil': 'dune-buggy rides, coastal boat trips, and live samba music',
+    'Antigua': 'beach-hopping (the island is said to have one for every day of the year), the historic English Harbour, and Sunday sunset parties at Shirley Heights',
+    'Costa Rica': 'zip-lining, surf lessons, and spotting wildlife in nearby rainforest parks',
+    'Aruba': 'catamaran snorkel trips out to a shipwreck, jeep tours of the rugged national park, and easy swimming at Palm and Eagle Beach',
+    'Colombia': 'exploring the walled old town of Cartagena, boat trips to the Rosario Islands, and salsa dancing',
+    'Turks and Caicos': 'water sports off Grace Bay, reef diving and snorkeling, and casual seafood shacks',
+    'Bahamas': 'snorkeling the reefs, visiting the famous swimming pigs, and day trips to the capital, Nassau',
+    'Curaçao': 'diving and snorkeling straight from the beach, the colorful Dutch-style capital of Willemstad, and boat trips to the uninhabited island of Klein Curaçao',
+    'Curacao': 'diving and snorkeling straight from the beach, the colorful Dutch-style capital of Willemstad, and boat trips to the uninhabited island of Klein Curacao',
+    'Belize': 'trips out to the barrier reef, floating through caves on inner tubes, and visiting Maya ruins',
+    'Panama': 'island-hopping in the Bocas del Toro islands, plus rainforest walks and canal day trips',
+    'Honduras': 'excellent, affordable diving and snorkeling on the reef off Roatán',
+    'Grenada': 'spice-plantation tours, waterfall hikes, and snorkeling over an underwater sculpture park',
+    'Bonaire': 'snorkeling and diving on the reef right off the beach',
+    'Bermuda': 'pink-sand beaches, the underground Crystal Caves, and golf',
+    'Dominica': 'waterfall hikes, natural hot springs, and whale watching',
+    'Saint Martin': 'beach-hopping between the French and Dutch sides, and watching planes land low over Maho Beach',
+    'British Virgin Islands': 'island-hopping by boat and climbing the Baths, a beach of giant granite boulders',
+    'Saint Vincent': 'sailing the nearby Grenadine islands and exploring black-sand beaches',
+    'Grand Cayman': 'meeting friendly rays at Stingray City, relaxing on Seven Mile Beach, and shipwreck diving',
+    'Saint Croix': 'snorkeling the protected reef at Buck Island and exploring the old Danish town of Christiansted',
+    'Saint Thomas': 'Magens Bay beach, duty-free shopping in the harbor town, and ferries to nearby St. John',
+    'Guatemala': 'Pacific surfing, volcano hikes, and day trips to the colonial town of Antigua',
+    'Nicaraugua': 'Pacific surfing and volcano hikes',
+    'El Salvador': 'surfing the Pacific beaches and volcano hikes',
+    'Ecuador': 'in-season whale watching and visiting coastal parks',
+    'Peru': 'fresh seafood and ceviche, and visiting nearby ancient ruins',
+    'Maldives': 'snorkeling the house reef, sandbank picnics, and dolphin cruises',
     'Fiji': 'reef diving, village visits, and island-hopping day sails',
   }
-  return MAP[r.country] || 'boat excursions, watersports, and local sightseeing arranged through the resort'
+  return MAP[r.country] || 'boat trips, water sports, and local sightseeing arranged through the resort'
 }
 
 // ---- destination landscape / character ---------------------------------------
@@ -318,66 +318,59 @@ function destinationActivities(r) {
 // Mexico is split by coast because Los Cabos, the Pacific, and the Riviera Maya
 // are nothing alike. No em dashes (site style).
 const DESTINATION_CHARACTER = {
-  'Dominican Republic': 'a big, varied island of long palm-backed beaches, coconut groves, and green mountains inland',
-  'Jamaica': 'lush and mountainous, with waterfalls, rafting rivers, and a famously lively north-coast culture',
-  'Cuba': 'a time-capsule island of classic cars and colonial cities, fringed by long white cays like Varadero',
-  'Saint Lucia': 'lush and dramatically volcanic, defined by the twin Piton peaks, rainforest, and sulphur springs',
-  'Brazil': 'a warm northeastern coast of dunes, lagoons, and an easygoing beach-and-samba culture',
-  'Barbados': 'a coral island with a calm, swimmable west coast and a wild Atlantic east, sitting south of the hurricane belt',
-  'Antigua': 'a gently rolling island famous for a beach for every day of the year and sheltered Georgian harbours',
-  'Costa Rica': 'a green, biodiverse coast where rainforest and volcanoes meet Pacific surf',
-  'Aruba': 'arid and reliably sunny, with a cactus-dotted interior and calm, clear water off Palm and Eagle Beach',
-  'Colombia': 'anchored by the walled colonial city of Cartagena and the white-sand Rosario Islands offshore',
-  'Turks and Caicos': 'low, dry, and ringed by the pale, exceptionally clear water and barrier reef off Grace Bay',
-  'Bahamas': 'a low, turquoise-fringed scatter of cays, powder beaches, and shallow sand flats',
-  'Curaçao': 'arid and Dutch-Caribbean, with cactus-strewn hills, calm shore-diving coves, and the pastel waterfront of Willemstad',
-  'Curacao': 'arid and Dutch-Caribbean, with cactus-strewn hills, calm shore-diving coves, and the pastel waterfront of Willemstad',
-  'Belize': 'jungle-and-reef country, with the barrier reef offshore and Mayan ruins and caves inland',
-  'Panama': 'where rainforest, two oceans, and the famous canal meet, with island archipelagos on both coasts',
-  'Honduras': "centered on the reef-fringed Bay Islands, home to some of the Caribbean's best-value diving",
-  'Grenada': 'the lush, hilly Spice Isle, scented with nutmeg and laced with rainforest waterfalls',
-  'Saint Martin': 'a small dual-nation island split between French and Dutch sides, each with its own beaches and cooking',
-  'British Virgin Islands': "a sailor's archipelago of green peaks, quiet anchorages, and the granite boulders of the Baths",
-  'United States': 'a warm-weather U.S. coast with easy access and familiar comforts',
-  'Saint Vincent': 'a green, volcanic island at the head of the Grenadines sailing chain',
-  'Guatemala': 'a land of volcanoes, black-sand Pacific surf, and colonial Antigua',
-  'Ecuador': 'a Pacific coast of long beaches and seasonal whale watching',
-  'Peru': 'a desert Pacific coast known for ceviche culture and ancient sites',
-  'Saint Croix': 'the largest and quietest U.S. Virgin Island, with Danish-colonial Christiansted and the Buck Island reef',
-  'Bermuda': 'a subtropical Atlantic island of pink-sand beaches and pastel colonial towns',
-  'Martinique': 'a lush French volcanic island of rainforest, rum estates, and Mount Pelée',
-  'Grand Cayman': 'a flat, polished island built around Seven Mile Beach and world-class diving',
-  'Dominica': 'the wild Nature Island, all rainforest, rivers, hot springs, and whales offshore',
-  'Saint Thomas': 'a hilly, harbour-lined U.S. Virgin Island known for Magens Bay and duty-free Charlotte Amalie',
-  'Bonaire': "a flat, arid diver's island ringed by protected reef right off the shore",
-  'Nicaraugua': 'a Pacific coast of surf breaks and volcanoes',
-  'El Salvador': 'a compact Pacific surf coast of dark-sand point breaks and volcanoes',
+  'Dominican Republic': 'a large island with long sandy beaches, palm groves, and green mountains inland',
+  'Jamaica': 'a green, mountainous island known for waterfalls, river rafting, and a lively music-and-food scene along its north coast',
+  'Cuba': 'a nostalgic island of vintage American cars and old colonial towns, with long white-sand beaches like those at Varadero',
+  'Saint Lucia': 'a lush, mountainous island whose landmark is the Pitons, two dramatic volcanic peaks rising straight out of the sea, with rainforest and natural hot springs nearby',
+  'Brazil': 'a warm northeastern coastline of sand dunes, lagoons, and a relaxed beach-and-music culture',
+  'Barbados': 'a coral island with calm, swimmable beaches on its west coast, bigger Atlantic surf on the east, and low hurricane risk',
+  'Antigua': 'a rolling green island said to have a beach for every day of the year, plus sheltered historic harbours',
+  'Costa Rica': 'a green, wildlife-rich coast where rainforest and volcanoes meet Pacific surf beaches',
+  'Aruba': 'a dry, sunny island with a cactus-dotted desert interior and calm, clear water along Palm and Eagle Beach',
+  'Colombia': 'best known for the walled colonial city of Cartagena and the white-sand Rosario Islands just offshore',
+  'Turks and Caicos': 'a flat, dry group of islands famous for the pale, exceptionally clear water and long reef off Grace Bay',
+  'Bahamas': 'a spread of low, sandy islands with soft beaches, shallow turquoise water, and easy island-hopping',
+  'Curaçao': 'a dry, sunny Dutch-Caribbean island with a cactus-covered interior, sheltered coves good for diving straight from the beach, and a capital, Willemstad, lined with colorful Dutch-style buildings',
+  'Curacao': 'a dry, sunny Dutch-Caribbean island with a cactus-covered interior, sheltered coves good for diving straight from the beach, and a capital, Willemstad, lined with colorful Dutch-style buildings',
+  'Belize': 'a country of jungle and reef, with a huge barrier reef offshore and ancient Maya ruins and caves inland',
+  'Panama': 'where rainforest, two oceans, and the famous shipping canal meet, with small island groups on both coasts',
+  'Honduras': 'best known for the Bay Islands, a set of reef-ringed islands offering some of the Caribbean\'s best-value diving',
+  'Grenada': 'a lush, hilly island nicknamed the Spice Isle for its nutmeg, with rainforest waterfalls to explore',
+  'Saint Martin': 'a small island shared by France and the Netherlands, each side with its own beaches and cuisine',
+  'British Virgin Islands': 'a cluster of green islands popular for sailing, with quiet coves and the Baths, a beach of giant granite boulders',
+  'United States': 'a warm-weather stretch of U.S. coast with easy access and familiar comforts',
+  'Saint Vincent': 'a green, volcanic island at the top of the Grenadines, a chain of small islands popular for sailing',
+  'Guatemala': 'a country of volcanoes, black-sand Pacific surf beaches, and the colonial town of Antigua',
+  'Ecuador': 'a Pacific coastline of long beaches and, in season, whale watching',
+  'Peru': 'a desert Pacific coast known for its seafood, especially ceviche, and nearby ancient ruins',
+  'Saint Croix': 'the largest and quietest of the U.S. Virgin Islands, with the historic Danish-built town of Christiansted and a protected reef at Buck Island',
+  'Bermuda': 'a subtropical Atlantic island, north of the Caribbean, known for pink-sand beaches and pastel towns',
+  'Martinique': 'a lush French island of rainforest, rum distilleries, and a volcano, Mount Pelée',
+  'Grand Cayman': 'a flat, polished island built around Seven Mile Beach, with excellent diving',
+  'Dominica': 'a rugged, unspoiled island nicknamed the Nature Island, full of rainforest, rivers, hot springs, and whales offshore',
+  'Saint Thomas': 'a hilly U.S. Virgin Island known for Magens Bay beach and duty-free shopping in its harbour town',
+  'Bonaire': 'a flat, dry island ringed by a protected reef you can snorkel or dive right from the shore',
+  'Nicaraugua': 'a Pacific coast of surf beaches and volcanoes',
+  'El Salvador': 'a small Pacific surf coast of dark-sand beaches and volcanoes',
 }
 function destinationCharacter(r) {
   const area = (r.area || '').toLowerCase()
   if (r.country === 'Mexico') {
-    if (/cabo|baja/.test(area)) return 'desert-meets-sea country, all arid cliffs and cactus where the Sea of Cortez meets the Pacific'
-    if (/vallarta|nayarit|punta mita|sayulita/.test(area)) return 'a jungle-backed bay tucked under the Sierra Madre, greener and more traditionally Mexican than the Caribbean coast'
-    if (/cancun|riviera|playa|tulum|cozumel|mujeres|maroma|akumal|costa mujeres|puerto morelos/.test(area)) return 'flat Yucatán jungle over limestone, with powder-white Caribbean sand, freshwater cenotes, and the reef just offshore'
-    return 'a warm Mexican coast built around the beach and watersports'
+    if (/cabo|baja/.test(area)) return 'a striking desert-meets-sea landscape of dry cliffs and cactus, where the Sea of Cortez meets the Pacific'
+    if (/vallarta|nayarit|punta mita|sayulita/.test(area)) return 'a green bay ringed by jungle-covered hills, more traditionally Mexican in feel than the Caribbean coast'
+    if (/cancun|riviera|playa|tulum|cozumel|mujeres|maroma|akumal|costa mujeres|puerto morelos/.test(area)) return 'flat jungle over soft limestone, with powder-white Caribbean beaches, freshwater cave pools called cenotes, and a reef just offshore'
+    return 'a warm Mexican coast built around the beach and water sports'
   }
   return DESTINATION_CHARACTER[r.country] || 'a warm, beach-focused stretch of coast'
 }
 
-// The first two things people actually DO at a destination, as a short phrase
-// ("shore diving and Willemstad") for use inside a verdict clause.
+// The single most iconic, self-explanatory thing to do at a destination, as a
+// short phrase for use inside a verdict clause. One item keeps the verdict
+// short; the fuller list lives in destinationActivities and the setting line.
 function destinationDrawShort(r) {
   const full = destinationActivities(r)
-  const items = full.split(/,\s+(?:and\s+)?/).map(s => s.trim()).filter(Boolean)
-  if (items.length <= 1) return items[0] || ''
-  // Drop a trailing fragment that only makes sense as a continuation
-  // ("right off the beach") so the two-item join reads cleanly.
-  const two = items.slice(0, 2)
-  // Keep it to a clean "X and Y". If the second item is itself a fragment or
-  // already compound ("volcano and mud baths"), a third "and" reads badly, so
-  // fall back to just the first draw.
-  if (/^(right|just|plus|and|with)\b/i.test(two[1]) || / and /.test(two[1])) return two[0]
-  return `${two[0]} and ${two[1]}`
+  const first = full.split(/,\s+(?:and\s+)?/)[0]
+  return (first || '').trim()
 }
 
 // ---- amenity handling --------------------------------------------------------
