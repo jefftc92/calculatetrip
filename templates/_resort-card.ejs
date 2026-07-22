@@ -27,7 +27,7 @@
     <div class="grid grid-cols-3 gap-2">
       <% ['food', 'service', 'value'].forEach(k => { %>
         <div class="bg-ocean-50 rounded-xl p-2.5 text-center">
-          <div class="text-base font-bold font-sans tabular-nums <%= scoreColor(resort.ratings[k]) %>"><%= resort.ratings[k] ?? '—' %></div>
+          <div class="text-base font-bold font-sans tabular-nums <%= scoreColor(resort.ratings[k]) %>"><%= resort.ratings[k] ?? 'n/a' %></div>
           <div class="text-xs font-sans text-ocean-500 mt-0.5"><%= k.charAt(0).toUpperCase() + k.slice(1) %></div>
         </div>
       <% }) %>

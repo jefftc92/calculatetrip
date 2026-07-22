@@ -23,7 +23,7 @@ const ratingRows = [
 <%- JSON.stringify({
   '@context': 'https://schema.org',
   '@type': 'WebPage',
-  name: `${a.name} vs ${b.name} — All-Inclusive Resort Comparison 2025`,
+  name: `${a.name} vs ${b.name}: All-Inclusive Resort Comparison 2025`,
   url: canonical,
   description: `Side-by-side comparison of ${a.name} and ${b.name}.`,
 }) %>
@@ -86,8 +86,8 @@ const ratingRows = [
     <% if (a.priceLevel || b.priceLevel) { %>
     <div class="ratings-row grid grid-cols-[1fr_110px_110px] sm:grid-cols-[1fr_140px_140px] border-b border-ocean-50 bg-ocean-50/40">
       <div class="px-4 sm:px-5 py-3.5 font-sans text-sm text-ocean-700 font-medium">Price Level</div>
-      <div class="py-3.5 flex items-center justify-center"><span class="font-sans text-sm font-semibold text-ocean-800"><%= a.priceLevel || '—' %></span></div>
-      <div class="py-3.5 flex items-center justify-center"><span class="font-sans text-sm font-semibold text-ocean-800"><%= b.priceLevel || '—' %></span></div>
+      <div class="py-3.5 flex items-center justify-center"><span class="font-sans text-sm font-semibold text-ocean-800"><%= a.priceLevel || 'n/a' %></span></div>
+      <div class="py-3.5 flex items-center justify-center"><span class="font-sans text-sm font-semibold text-ocean-800"><%= b.priceLevel || 'n/a' %></span></div>
     </div>
     <% } %>
 
@@ -108,8 +108,8 @@ const ratingRows = [
     <% if (a.notes || b.notes) { %>
     <div class="ratings-row grid grid-cols-[1fr_110px_110px] sm:grid-cols-[1fr_140px_140px] border-b border-ocean-50 bg-ocean-50/40">
       <div class="px-4 sm:px-5 py-3.5 font-sans text-sm text-ocean-700 font-medium">Notes</div>
-      <div class="py-3 px-3 flex items-center justify-center text-center"><span class="font-sans text-[11px] text-ocean-600 leading-snug"><%= a.notes || '—' %></span></div>
-      <div class="py-3 px-3 flex items-center justify-center text-center"><span class="font-sans text-[11px] text-ocean-600 leading-snug"><%= b.notes || '—' %></span></div>
+      <div class="py-3 px-3 flex items-center justify-center text-center"><span class="font-sans text-[11px] text-ocean-600 leading-snug"><%= a.notes || 'n/a' %></span></div>
+      <div class="py-3 px-3 flex items-center justify-center text-center"><span class="font-sans text-[11px] text-ocean-600 leading-snug"><%= b.notes || 'n/a' %></span></div>
     </div>
     <% } %>
 
@@ -134,14 +134,14 @@ const ratingRows = [
           <% if (sA !== null) { %>
             <span class="font-sans text-base font-bold tabular-nums <%= scoreColor(sA) %>"><%= sA %></span>
           <% } else { %>
-            <span class="text-gray-300">—</span>
+            <span class="text-gray-300">n/a</span>
           <% } %>
         </div>
         <div class="py-3.5 flex items-center justify-center">
           <% if (sB !== null) { %>
             <span class="font-sans text-base font-bold tabular-nums <%= scoreColor(sB) %>"><%= sB %></span>
           <% } else { %>
-            <span class="text-gray-300">—</span>
+            <span class="text-gray-300">n/a</span>
           <% } %>
         </div>
       </div>
@@ -162,11 +162,11 @@ const ratingRows = [
         <p class="font-sans text-base text-ocean-700 leading-relaxed"><%= overview.keyDifferences %></p>
       <% } else { %>
         <p class="font-sans text-base text-ocean-700 leading-relaxed">
-          <%= winner.name %> (<%= winner.ratings.overall %>/10) edges ahead of <%= loser.name %> (<%= loser.ratings.overall %>/10) overall, but both rank among the finest all-inclusive resorts in the region.<% if (a.type !== b.type) { %> The most decisive factor for many travelers will be audience: <%= a.type === 'adults-only' ? a.name : b.name %> is adults-only, while <%= a.type === 'family' ? a.name : b.name %> welcomes families.<% } %><% if (a.country !== b.country) { %> <%= a.name %> is located in <%= a.country %>, while <%= b.name %> is in <%= b.country %> — a meaningful difference in travel logistics, climate, and overall character.<% } %>
+          <%= winner.name %> (<%= winner.ratings.overall %>/10) edges ahead of <%= loser.name %> (<%= loser.ratings.overall %>/10) overall, but both rank among the finest all-inclusive resorts in the region.<% if (a.type !== b.type) { %> The most decisive factor for many travelers will be audience: <%= a.type === 'adults-only' ? a.name : b.name %> is adults-only, while <%= a.type === 'family' ? a.name : b.name %> welcomes families.<% } %><% if (a.country !== b.country) { %> <%= a.name %> is located in <%= a.country %>, while <%= b.name %> is in <%= b.country %>, a meaningful difference in travel logistics, climate, and overall character.<% } %>
         </p>
         <div class="flex flex-col sm:flex-row gap-3 mt-5">
-          <a href="<%= winner.agodaLink %>" target="_blank" rel="noopener noreferrer sponsored" class="flex-1 text-center font-sans text-sm font-bold bg-gold-500 hover:bg-gold-600 text-white rounded-xl py-3 transition-colors">Check Prices — <%= winner.name.split(' ').slice(0,2).join(' ') %> →</a>
-          <a href="<%= loser.agodaLink %>" target="_blank" rel="noopener noreferrer sponsored" class="flex-1 text-center font-sans text-sm font-semibold bg-ocean-100 hover:bg-ocean-200 text-ocean-900 rounded-xl py-3 transition-colors">Check Prices — <%= loser.name.split(' ').slice(0,2).join(' ') %> →</a>
+          <a href="<%= winner.agodaLink %>" target="_blank" rel="noopener noreferrer sponsored" class="flex-1 text-center font-sans text-sm font-bold bg-gold-500 hover:bg-gold-600 text-white rounded-xl py-3 transition-colors">Check Prices: <%= winner.name.split(' ').slice(0,2).join(' ') %> →</a>
+          <a href="<%= loser.agodaLink %>" target="_blank" rel="noopener noreferrer sponsored" class="flex-1 text-center font-sans text-sm font-semibold bg-ocean-100 hover:bg-ocean-200 text-ocean-900 rounded-xl py-3 transition-colors">Check Prices: <%= loser.name.split(' ').slice(0,2).join(' ') %> →</a>
         </div>
       <% } %>
     </div>
@@ -221,7 +221,7 @@ const ratingRows = [
             </div>
             <% } %>
             <p class="font-sans text-sm text-ocean-700 leading-relaxed flex-1"><%= r.whatYouNeedToKnow %></p>
-            <a href="<%= r.agodaLink %>" target="_blank" rel="noopener noreferrer sponsored" class="mt-5 block text-center font-sans text-sm font-bold <%= i === 0 ? 'bg-gold-500 hover:bg-gold-600 text-white' : 'bg-ocean-900 hover:bg-ocean-950 text-white' %> rounded-xl py-3 transition-colors">Check Prices — <%= r.name.split(' ').slice(0,2).join(' ') %> →</a>
+            <a href="<%= r.agodaLink %>" target="_blank" rel="noopener noreferrer sponsored" class="mt-5 block text-center font-sans text-sm font-bold <%= i === 0 ? 'bg-gold-500 hover:bg-gold-600 text-white' : 'bg-ocean-900 hover:bg-ocean-950 text-white' %> rounded-xl py-3 transition-colors">Check Prices: <%= r.name.split(' ').slice(0,2).join(' ') %> →</a>
           </div>
         <% }) %>
       </div>
@@ -251,20 +251,20 @@ const ratingRows = [
     <div class="divide-y divide-ocean-100">
       <% [
         {
-          q: `Which is better — ${a.name} or ${b.name}?`,
+          q: `Which is better, ${a.name} or ${b.name}?`,
           a: `Based on our ratings, ${winner.name} scores ${winner.ratings.overall}/10 compared to ${loser.ratings.overall}/10 for ${loser.name}. That said, "better" depends on your priorities. ${overview ? overview.whoShouldChooseA + ' ' + overview.whoShouldChooseB : `${winner.name} edges ahead overall, but both resorts rank among the finest all-inclusives in the region.`}`,
         },
         {
           q: `Is ${a.name} good for families?`,
           a: a.type === 'adults-only'
             ? `${a.name} is adults-only (${a.ageNote || 'no children'}), so it is not suitable for guests traveling with younger children. It is designed specifically for couples and adult travelers seeking a peaceful, romantic atmosphere.`
-            : `Yes — ${a.name} is family-friendly and welcomes guests of all ages. It is well suited to multi-generational travel and family groups.`,
+            : `Yes, ${a.name} is family-friendly and welcomes guests of all ages. It is well suited to multi-generational travel and family groups.`,
         },
         {
           q: `Is ${b.name} good for families?`,
           a: b.type === 'adults-only'
             ? `${b.name} is adults-only (${b.ageNote || 'no children'}), so it is not suitable for guests traveling with younger children. It is designed for couples and adult travelers.`
-            : `Yes — ${b.name} is family-friendly and welcomes guests of all ages, making it a solid choice for families and multi-generational groups.`,
+            : `Yes, ${b.name} is family-friendly and welcomes guests of all ages, making it a solid choice for families and multi-generational groups.`,
         },
         {
           q: 'How are the resort ratings calculated?',
@@ -272,7 +272,7 @@ const ratingRows = [
         },
         {
           q: 'What does "all-inclusive" include at these resorts?',
-          a: 'Every resort in our database is verified all-inclusive. At minimum, the all-inclusive rate covers accommodation, all meals, beverages (alcoholic and non-alcoholic), and core activities. Some resorts also include diving, guided excursions, or spa credits. Premium add-ons like specialty dining, spa treatments, or off-site excursions may carry an additional charge — confirm specifics with the resort or booking platform at the time of reservation.',
+          a: 'Every resort in our database is verified all-inclusive. At minimum, the all-inclusive rate covers accommodation, all meals, beverages (alcoholic and non-alcoholic), and core activities. Some resorts also include diving, guided excursions, or spa credits. Premium add-ons like specialty dining, spa treatments, or off-site excursions may carry an additional charge, confirm specifics with the resort or booking platform at the time of reservation.',
         },
         {
           q: `What is the best time to visit ${a.country === b.country ? a.country : `${a.country} or ${b.country}`}?`,

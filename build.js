@@ -14,7 +14,7 @@ const SITE_NAME = 'CalculateTrip'
 
 const { resorts: legacyResorts, pairOverviews: legacyPairOverviews } = require('./data/resorts')
 const { newResorts, newPairOverviews, shouldGeneratePair } = require('./data/resorts-new')
-const { buildOverview } = require('./scripts/formulaic-overview')
+const { buildOverview, deDash } = require('./scripts/formulaic-overview')
 const { fillResortContent } = require('./scripts/formulaic-resort')
 
 const resorts = [...legacyResorts, ...newResorts]
@@ -48,6 +48,14 @@ for (const r of resorts) {
 // carries the same sections. Hand-authored and researched fields are never
 // overwritten.
 for (const r of resorts) Object.assign(r, fillResortContent(r))
+
+// Site style: no em or en dashes anywhere on the page. Scrub the editorial
+// text fields (hand-authored, researched, or formulaic all pass through here).
+for (const r of resorts) {
+  for (const k of ['activities', 'whatYouNeedToKnow', 'description', 'bestTimeToVisit']) {
+    if (typeof r[k] === 'string' && r[k]) r[k] = deDash(r[k])
+  }
+}
 
 // Merge overviews: shards first (lowest priority), then module-level new,
 // then legacy hand-authored (highest priority, never overwritten).
@@ -176,6 +184,11 @@ for (const { a, b } of allComparisonPairs()) {
   const stored = pairOverviews[key]
   if (!stored || recitesScores(stored)) {
     pairOverviews[key] = buildOverview(a, b)
+  } else {
+    // Stored (hand-authored) overview kept as-is, but still scrub em/en dashes
+    // to match site style. buildOverview output is already dash-free.
+    const o = pairOverviews[key]
+    for (const k of Object.keys(o)) if (typeof o[k] === 'string') o[k] = deDash(o[k])
   }
 }
 

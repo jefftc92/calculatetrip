@@ -311,6 +311,75 @@ function destinationActivities(r) {
   return MAP[r.country] || 'boat excursions, watersports, and local sightseeing arranged through the resort'
 }
 
+// ---- destination landscape / character ---------------------------------------
+// A one-clause read on what a destination is physically LIKE — its landscape,
+// terrain, and defining feature — so a comparison can describe where each
+// resort sits, not just name the country. Reads as "{Place} is {value}".
+// Mexico is split by coast because Los Cabos, the Pacific, and the Riviera Maya
+// are nothing alike. No em dashes (site style).
+const DESTINATION_CHARACTER = {
+  'Dominican Republic': 'a big, varied island of long palm-backed beaches, coconut groves, and green mountains inland',
+  'Jamaica': 'lush and mountainous, with waterfalls, rafting rivers, and a famously lively north-coast culture',
+  'Cuba': 'a time-capsule island of classic cars and colonial cities, fringed by long white cays like Varadero',
+  'Saint Lucia': 'lush and dramatically volcanic, defined by the twin Piton peaks, rainforest, and sulphur springs',
+  'Brazil': 'a warm northeastern coast of dunes, lagoons, and an easygoing beach-and-samba culture',
+  'Barbados': 'a coral island with a calm, swimmable west coast and a wild Atlantic east, sitting south of the hurricane belt',
+  'Antigua': 'a gently rolling island famous for a beach for every day of the year and sheltered Georgian harbours',
+  'Costa Rica': 'a green, biodiverse coast where rainforest and volcanoes meet Pacific surf',
+  'Aruba': 'arid and reliably sunny, with a cactus-dotted interior and calm, clear water off Palm and Eagle Beach',
+  'Colombia': 'anchored by the walled colonial city of Cartagena and the white-sand Rosario Islands offshore',
+  'Turks and Caicos': 'low, dry, and ringed by the pale, exceptionally clear water and barrier reef off Grace Bay',
+  'Bahamas': 'a low, turquoise-fringed scatter of cays, powder beaches, and shallow sand flats',
+  'Curaçao': 'arid and Dutch-Caribbean, with cactus-strewn hills, calm shore-diving coves, and the pastel waterfront of Willemstad',
+  'Curacao': 'arid and Dutch-Caribbean, with cactus-strewn hills, calm shore-diving coves, and the pastel waterfront of Willemstad',
+  'Belize': 'jungle-and-reef country, with the barrier reef offshore and Mayan ruins and caves inland',
+  'Panama': 'where rainforest, two oceans, and the famous canal meet, with island archipelagos on both coasts',
+  'Honduras': "centered on the reef-fringed Bay Islands, home to some of the Caribbean's best-value diving",
+  'Grenada': 'the lush, hilly Spice Isle, scented with nutmeg and laced with rainforest waterfalls',
+  'Saint Martin': 'a small dual-nation island split between French and Dutch sides, each with its own beaches and cooking',
+  'British Virgin Islands': "a sailor's archipelago of green peaks, quiet anchorages, and the granite boulders of the Baths",
+  'United States': 'a warm-weather U.S. coast with easy access and familiar comforts',
+  'Saint Vincent': 'a green, volcanic island at the head of the Grenadines sailing chain',
+  'Guatemala': 'a land of volcanoes, black-sand Pacific surf, and colonial Antigua',
+  'Ecuador': 'a Pacific coast of long beaches and seasonal whale watching',
+  'Peru': 'a desert Pacific coast known for ceviche culture and ancient sites',
+  'Saint Croix': 'the largest and quietest U.S. Virgin Island, with Danish-colonial Christiansted and the Buck Island reef',
+  'Bermuda': 'a subtropical Atlantic island of pink-sand beaches and pastel colonial towns',
+  'Martinique': 'a lush French volcanic island of rainforest, rum estates, and Mount Pelée',
+  'Grand Cayman': 'a flat, polished island built around Seven Mile Beach and world-class diving',
+  'Dominica': 'the wild Nature Island, all rainforest, rivers, hot springs, and whales offshore',
+  'Saint Thomas': 'a hilly, harbour-lined U.S. Virgin Island known for Magens Bay and duty-free Charlotte Amalie',
+  'Bonaire': "a flat, arid diver's island ringed by protected reef right off the shore",
+  'Nicaraugua': 'a Pacific coast of surf breaks and volcanoes',
+  'El Salvador': 'a compact Pacific surf coast of dark-sand point breaks and volcanoes',
+}
+function destinationCharacter(r) {
+  const area = (r.area || '').toLowerCase()
+  if (r.country === 'Mexico') {
+    if (/cabo|baja/.test(area)) return 'desert-meets-sea country, all arid cliffs and cactus where the Sea of Cortez meets the Pacific'
+    if (/vallarta|nayarit|punta mita|sayulita/.test(area)) return 'a jungle-backed bay tucked under the Sierra Madre, greener and more traditionally Mexican than the Caribbean coast'
+    if (/cancun|riviera|playa|tulum|cozumel|mujeres|maroma|akumal|costa mujeres|puerto morelos/.test(area)) return 'flat Yucatán jungle over limestone, with powder-white Caribbean sand, freshwater cenotes, and the reef just offshore'
+    return 'a warm Mexican coast built around the beach and watersports'
+  }
+  return DESTINATION_CHARACTER[r.country] || 'a warm, beach-focused stretch of coast'
+}
+
+// The first two things people actually DO at a destination, as a short phrase
+// ("shore diving and Willemstad") for use inside a verdict clause.
+function destinationDrawShort(r) {
+  const full = destinationActivities(r)
+  const items = full.split(/,\s+(?:and\s+)?/).map(s => s.trim()).filter(Boolean)
+  if (items.length <= 1) return items[0] || ''
+  // Drop a trailing fragment that only makes sense as a continuation
+  // ("right off the beach") so the two-item join reads cleanly.
+  const two = items.slice(0, 2)
+  // Keep it to a clean "X and Y". If the second item is itself a fragment or
+  // already compound ("volcano and mud baths"), a third "and" reads badly, so
+  // fall back to just the first draw.
+  if (/^(right|just|plus|and|with)\b/i.test(two[1]) || / and /.test(two[1])) return two[0]
+  return `${two[0]} and ${two[1]}`
+}
+
 // ---- amenity handling --------------------------------------------------------
 const ACTIVITY_AMENITIES = {
   'Scuba Diving': 'scuba diving', 'Diving': 'scuba diving',
@@ -343,5 +412,6 @@ module.exports = {
   countryName, countryPossessive,
   CATEGORY, topRatings, weakestRating, ratingGaps, PRICE_WORDS,
   SEASONS, seasonStr, hasKnownSeason, destinationActivities,
+  destinationCharacter, destinationDrawShort,
   ACTIVITY_AMENITIES, activityAmenities,
 }
