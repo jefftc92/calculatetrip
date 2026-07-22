@@ -158,7 +158,18 @@ const ratingRows = [
     <div class="bg-white border border-ocean-100 rounded-2xl shadow-card p-6 sm:p-8">
       <p class="font-sans text-xs font-bold uppercase tracking-widest text-ocean-500 mb-2">Editorial Overview</p>
       <h2 class="font-serif text-2xl font-bold text-ocean-950 mb-4">Key Differences</h2>
-      <% if (overview) { %>
+      <% if (overview && overview.keyDifferences && typeof overview.keyDifferences === 'object') { %>
+        <% const kd = overview.keyDifferences %>
+        <% if (kd.intro) { %>
+          <p class="font-sans text-base text-ocean-700 leading-relaxed mb-6"><%= kd.intro %></p>
+        <% } %>
+        <h3 class="font-serif text-lg font-bold text-ocean-950 mb-1.5"><%= a.name %></h3>
+        <p class="font-sans text-base text-ocean-700 leading-relaxed mb-5"><%= kd.profileA %></p>
+        <h3 class="font-serif text-lg font-bold text-ocean-950 mb-1.5"><%= b.name %></h3>
+        <p class="font-sans text-base text-ocean-700 leading-relaxed mb-5"><%= kd.profileB %></p>
+        <h3 class="font-serif text-lg font-bold text-ocean-950 mb-1.5">The verdict</h3>
+        <p class="font-sans text-base text-ocean-700 leading-relaxed"><%= kd.verdict %></p>
+      <% } else if (overview) { %>
         <p class="font-sans text-base text-ocean-700 leading-relaxed"><%= overview.keyDifferences %></p>
       <% } else { %>
         <p class="font-sans text-base text-ocean-700 leading-relaxed">

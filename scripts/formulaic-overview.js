@@ -322,17 +322,110 @@ function reasonFor(r, other, ctx, rng) {
 
 // ---- section writers -----------------------------------------------------------
 
-// When one (or both) resorts in the pair is announced but not yet open, the
-// only honest comparison is availability — contrasting activities or ratings
-// against a resort that doesn't exist would be fabrication.
+// Key Differences is returned as a small structure the page renders under
+// headers: a short profile of each resort, then a verdict. `intro` is an
+// optional shared-context line (used same-country to describe the one shared
+// destination). Legacy hand-authored overviews keep a plain string; the
+// template handles both shapes.
+
+// When one (or both) resorts is announced but not yet open, the only honest
+// comparison is availability.
 function writeUnbuiltDifference(a, b, idA, idB, aUnbuilt, bUnbuilt) {
-  const opener = `${a.name} ${idA}. ${b.name} ${idB}.`
+  const profileA = `${a.name} ${idA}.`
+  const profileB = `${b.name} ${idB}.`
+  let verdict
   if (aUnbuilt && bUnbuilt) {
-    return `${opener} Both are announced but not yet open, so there's no real guest experience to compare at either. Treat this as a look ahead, not a decision between two bookable resorts.`
+    verdict = `Both are announced but not yet open, so there's no real guest experience to compare at either. Treat this as a look ahead, not a decision between two bookable resorts.`
+  } else {
+    const open = aUnbuilt ? b : a
+    const soon = aUnbuilt ? a : b
+    verdict = `${open.name} is open and bookable now, while ${soon.name} is still being built and can't be visited yet. For a trip any time soon, ${open.name} is the only real option; keep ${soon.name} in mind only if you're planning far enough ahead for it to open.`
   }
-  const open = aUnbuilt ? b : a
-  const soon = aUnbuilt ? a : b
-  return `${opener} The practical difference is simple: ${open.name} is open and bookable now, while ${soon.name} is still forthcoming and can't be visited yet. For a trip in the near term, ${open.name} is the only real option; keep ${soon.name} in mind only if you're planning far enough ahead for it to open.`
+  return { intro: null, profileA, profileB, verdict }
+}
+
+// Trip noun for a "choose X for ..." clause. Encodes the shared audience when
+// no audience adjective is carrying it; stays neutral when one is.
+function tripWord(r, rng, audienceCarried) {
+  if (audienceCarried) return pick(rng, ['trip', 'getaway', 'stay'])
+  if (r.type === 'adults-only') return pick(rng, ['trip', 'getaway', 'escape'])
+  return pick(rng, ['family trip', 'family getaway'])
+}
+
+// The per-resort "choose it for ..." clause of a two-sided verdict, pulling the
+// axes that actually differ: audience (or, if that's shared, character), the
+// destination (cross-country), and a distinctive on-site draw. Quality/price
+// are handled once, separately, as a tiebreaker sentence.
+function chooseReason(r, other, d, rng) {
+  const leadAdj = d.audienceDiffers ? audienceAdj(r)
+    : (d.characterDiffers && characterOf(r)) ? characterOf(r) : null
+  const noun = tripWord(r, rng, d.audienceDiffers)
+  let s
+  if (leadAdj && !d.sameCountry) s = `for ${art(leadAdj)} ${leadAdj} ${noun} in ${countryName(r.country)}`
+  else if (leadAdj) s = `for ${art(leadAdj)} ${leadAdj} ${noun}`
+  else if (!d.sameCountry) s = `for ${countryName(r.country)}`
+  else s = `for ${art(noun)} ${noun}`
+  if (d.activityDiffers) {
+    const idR = r === d.a ? d.idA : d.idB
+    const dr = distinctiveDraws(r, other, 1)[0]
+    if (dr && !identityHasDraw(idR, dr)) s += `, with ${dr}`
+  }
+  return s
+}
+
+// A single sentence noting whichever of quality / price separates the pair.
+function tiebreakerSentence(d) {
+  const { qGap, qWinner, cheaper } = d
+  if (qGap && cheaper && qWinner === cheaper) {
+    return `${qWinner.name} also rates higher for ${CATEGORY[qGap.k].noun} and costs less.`
+  }
+  const bits = []
+  if (qGap) bits.push(`${qWinner.name} rates higher for ${CATEGORY[qGap.k].noun}`)
+  if (cheaper) bits.push(`${cheaper.name} costs less`)
+  return bits.length ? `${cap(listJoin(bits))}.` : ''
+}
+
+function writeVerdict(a, b, d, rng) {
+  const { sameCountry, audienceDiffers, characterDiffers, charA, charB,
+    activityDiffers, aOnly, bOnly, cheaper, qGap, qWinner } = d
+
+  // Shared audience is stated in the same-country intro; for cross-country it's
+  // acknowledged here so the reader always knows who both resorts are for.
+  const sharedAudLead = (!audienceDiffers && !sameCountry) ? `Both are ${audienceAdj(a)}, so ` : ''
+
+  const expAxis = activityDiffers ? 'activity' : characterDiffers ? 'character' : null
+  const twoSided = audienceDiffers || !sameCountry || cheaper ||
+    (characterDiffers && expAxis !== 'character') ||
+    (activityDiffers && expAxis !== 'activity')
+
+  if (twoSided) {
+    const rA = chooseReason(a, b, d, rng), rB = chooseReason(b, a, d, rng)
+    const tie = tiebreakerSentence(d)
+    return `${cap(sharedAudLead)}choose ${a.name} ${rA}; choose ${b.name} ${rB}.` + (tie ? ` ${tie}` : '')
+  }
+
+  // Not two-sided: a single vivid axis, or nothing but the rating card.
+  if (expAxis === 'activity') {
+    const tail = qGap ? `, though ${qWinner.name} rates higher for ${CATEGORY[qGap.k].noun}` : ''
+    return `${cap(sharedAudLead)}it comes down to how you'd spend your days: ${a.name} for ${listJoin(aOnly)}, ${b.name} for ${listJoin(bOnly)}${tail}.`
+  }
+  if (expAxis === 'character') {
+    const tail = qGap ? `, though ${qWinner.name} rates a little higher for ${CATEGORY[qGap.k].noun}` : ''
+    return `${cap(sharedAudLead)}it's about the feel you want: ${a.name} for ${art(charA)} ${charA} stay, ${b.name} for ${art(charB)} ${charB} one${tail}.`
+  }
+  if (qGap) {
+    const loser = qWinner === a ? b : a
+    return pick(rng, [
+      `${qWinner.name} is the stronger all-round pick, ${CATEGORY[qGap.k].noun} especially; ${loser.name} is worth it mainly if you prefer its setting or find a better rate.`,
+      `On paper ${qWinner.name} is the safer bet, ${CATEGORY[qGap.k].noun} above all; go with ${loser.name} only if its setting or price tilts things your way.`,
+    ])
+  }
+  // Genuinely matched: still point at any slim edge.
+  const dA = distinguishingStrength(a, b), dB = distinguishingStrength(b, a)
+  if (dA && !dB) return `They're closely matched overall; ${a.name} edges it on ${CATEGORY[dA].noun}.`
+  if (dB && !dA) return `They're closely matched overall; ${b.name} edges it on ${CATEGORY[dB].noun}.`
+  if (dA && dB) return `They're closely matched overall, with ${a.name} leaning stronger on ${CATEGORY[dA].noun} and ${b.name} on ${CATEGORY[dB].noun}.`
+  return `On the big measures they're closely matched, so it comes down to setting and personal preference.`
 }
 
 function writeKeyDifferences(a, b, rng) {
@@ -340,9 +433,6 @@ function writeKeyDifferences(a, b, rng) {
   const aUnbuilt = isUnbuilt(a), bUnbuilt = isUnbuilt(b)
   if (aUnbuilt || bUnbuilt) return writeUnbuiltDifference(a, b, idA, idB, aUnbuilt, bUnbuilt)
 
-  const parts = []
-
-  // --- Which axes genuinely differ (the only things worth writing about) ---
   const sameCountry = a.country && a.country === b.country
   const audienceDiffers = audienceAdj(a) !== audienceAdj(b)
   const charA = characterOf(a), charB = characterOf(b)
@@ -354,123 +444,37 @@ function writeKeyDifferences(a, b, rng) {
   const gaps = ratingGaps(a, b, 1.0)
   const qGap = gaps.length ? gaps[0] : null
   const qWinner = qGap ? (qGap.diff > 0 ? a : b) : null
+  const d = {
+    a, b, idA, idB, sameCountry, audienceDiffers, charA, charB, characterDiffers,
+    aOnly, bOnly, activityDiffers, cheaper, qGap, qWinner,
+  }
 
-  // --- Opening: what each resort actually is. ---
-  parts.push(`${a.name} ${idA}. ${b.name} ${idB}.`)
-
-  // --- Cross-destination path: the biggest difference is where you'd be.
-  // Built from short, single-idea sentences (no long run-ons), with the
-  // landscape described in plain terms and the audience stated outright. ---
+  let intro = null, profileA, profileB
   if (!sameCountry) {
-    parts.push(`${cap(settingLabel(a))} is ${destinationCharacter(a)}.`)
-    parts.push(`${cap(settingLabel(b))} is ${destinationCharacter(b)}.`)
-    // Audience, plainly: contrast when it differs, state it once when shared.
-    parts.push(audienceDiffers
-      ? `${a.name} is ${audienceAdj(a)}; ${b.name} is ${audienceAdj(b)}.`
-      : `Both are ${audienceAdj(a)} resorts.`)
-    // One short line on the sharpest on-site difference, if there is one.
-    // Skip a draw the identity sentence already named (no "…full casino… has a
-    // casino" echo), and never repeat the long resort names for nothing.
-    const aDraw = activityDiffers && !identityHasDraw(idA, aOnly[0]) ? aOnly[0] : null
-    const bDraw = activityDiffers && !identityHasDraw(idB, bOnly[0]) ? bOnly[0] : null
-    if (aDraw && bDraw) parts.push(`On site, ${a.name} has ${aDraw}; ${b.name} has ${bDraw}.`)
-    else if (aDraw) parts.push(`${a.name} is known for ${aDraw}.`)
-    else if (bDraw) parts.push(`${b.name} is known for ${bDraw}.`)
-    else if (characterDiffers) parts.push(`In feel, ${a.name} is ${charA} and ${b.name} is ${charB}.`)
-    // Verdict: it comes down to the destination. One short tiebreaker if warranted.
-    parts.push(`It comes down to the destination: choose ${a.name} for ${countryName(a.country)}, ${b.name} for ${countryName(b.country)}.`)
-    const tie = []
-    if (qGap && cheaper && qWinner === cheaper) {
-      tie.push(`${qWinner.name} rates higher for ${CATEGORY[qGap.k].noun} and costs less`)
-    } else {
-      if (qGap) tie.push(`${qWinner.name} rates higher for ${CATEGORY[qGap.k].noun}`)
-      if (cheaper) tie.push(`${cheaper.name} costs less`)
-    }
-    if (tie.length) parts.push(`${cap(listJoin(tie))}.`)
-    return parts.join(' ')
-  }
-
-  // --- Same-country path: one shared destination. Describe the landscape once
-  // (noting different areas or coasts where they diverge), then let the
-  // resort-level differences decide. ---
-  const areaA = (a.area || '').trim(), areaB = (b.area || '').trim()
-  const diffArea = areaA && areaB && areaA.toLowerCase() !== areaB.toLowerCase()
-  const destA = destinationCharacter(a), destB = destinationCharacter(b)
-  // State the shared audience here (family vs adults) since a same-audience
-  // pair never surfaces it in the verdict; a differing audience is carried by
-  // the verdict instead.
-  // "Both are family-friendly resorts in X" when audience is shared; a plain
-  // "Both are in X" when it differs (the verdict carries the audience then).
-  const bothIn = audienceDiffers
-    ? `Both are in ${countryName(a.country)}`
-    : `Both are ${audienceAdj(a)} resorts in ${countryName(a.country)}`
-  if (destA !== destB) {
-    parts.push(`${bothIn}, but in very different parts. ${cap(areaA || a.name)} is ${destA}. ${cap(areaB || b.name)} is ${destB}.`)
+    // Each resort's profile carries its own destination (the biggest split).
+    profileA = `${a.name} ${idA}. ${cap(settingLabel(a))} is ${destinationCharacter(a)}.`
+    profileB = `${b.name} ${idB}. ${cap(settingLabel(b))} is ${destinationCharacter(b)}.`
   } else {
-    parts.push(`${bothIn}, ${destA}.`)
-    if (diffArea) parts.push(`${a.name} is in ${areaA}, ${b.name} in ${areaB}.`)
+    // One shared destination described once, up top; profiles stay about the
+    // resorts themselves.
+    const areaA = (a.area || '').trim(), areaB = (b.area || '').trim()
+    const diffArea = areaA && areaB && areaA.toLowerCase() !== areaB.toLowerCase()
+    const destA = destinationCharacter(a), destB = destinationCharacter(b)
+    const bothIn = audienceDiffers
+      ? `Both are in ${countryName(a.country)}`
+      : `Both are ${audienceAdj(a)} resorts in ${countryName(a.country)}`
+    intro = destA !== destB
+      ? `${bothIn}, but in different parts. ${cap(areaA || a.name)} is ${destA}. ${cap(areaB || b.name)} is ${destB}.`
+      : `${bothIn}, ${destA}.`
+    // Note the specific area only when it adds something the identity and the
+    // shared-landscape intro didn't already say.
+    const noteArea = (r, area, id) => (diffArea && destA === destB && area &&
+      !id.toLowerCase().includes(area.toLowerCase())) ? ` It's in ${area}.` : ''
+    profileA = `${a.name} ${idA}.` + noteArea(a, areaA, idA)
+    profileB = `${b.name} ${idB}.` + noteArea(b, areaB, idB)
   }
 
-  // The body spotlights the sharpest resort-level difference; the verdict makes
-  // it an explicit "choose A if …, choose B if …", padding no shared axis.
-  const expAxis = activityDiffers ? 'activity' : characterDiffers ? 'character' : null
-  const verdictTwoSided = audienceDiffers || cheaper ||
-    (characterDiffers && expAxis !== 'character') ||
-    (activityDiffers && expAxis !== 'activity')
-
-  const activityBody = () => pick(rng, [
-    `The days look nothing alike: ${listJoin(aOnly)} at ${a.name}, versus ${listJoin(bOnly)} at ${b.name}.`,
-    `You'd spend your time differently, too: ${listJoin(aOnly)} at ${a.name}, ${listJoin(bOnly)} at ${b.name}.`,
-  ])
-  const characterBody = () => pick(rng, [
-    `The feel is the real split: ${a.name} is ${charA}, ${b.name} ${charB}.`,
-    `They diverge most on atmosphere: ${a.name} feels ${charA}, ${b.name} ${charB}.`,
-  ])
-  const qualityBody = () => `The clearest gap on the rating card is ${CATEGORY[qGap.k].noun}: ${qWinner.name} pulls ahead, ${pick(rng, CATEGORY[qGap.k].consequences)}.`
-
-  if (verdictTwoSided) {
-    if (expAxis === 'activity') parts.push(activityBody())
-    else if (expAxis === 'character') parts.push(characterBody())
-    else if (qGap) parts.push(qualityBody())
-
-    const covered = expAxis || (qGap ? 'quality' : null)
-    const qualityFree = qGap && covered !== 'quality'
-    const ctx = {
-      audience: audienceDiffers,
-      character: characterDiffers && covered !== 'character',
-      destination: false,
-      activity: activityDiffers && covered !== 'activity',
-      qualityKey: qualityFree ? qGap.k : null,
-      qualityWinner: qualityFree ? qWinner : null,
-      cheaper,
-    }
-    const rA = reasonFor(a, b, ctx, rng), rB = reasonFor(b, a, ctx, rng)
-    parts.push(pick(rng, [
-      `Choose ${a.name} ${rA}; choose ${b.name} ${rB}.`,
-      `The bottom line: pick ${a.name} ${rA}, and ${b.name} ${rB}.`,
-    ]))
-  } else if (expAxis === 'activity') {
-    const tail = qGap ? `, with ${qWinner.name} also holding the edge on ${CATEGORY[qGap.k].noun}` : ''
-    parts.push(`It comes down to how you'd spend your days: ${a.name} for ${listJoin(aOnly)}, ${b.name} for ${listJoin(bOnly)}${tail}.`)
-  } else if (expAxis === 'character') {
-    const tail = qGap ? `, though ${qWinner.name} rates a little higher on ${CATEGORY[qGap.k].noun}` : ''
-    parts.push(`It comes down to the atmosphere you want: ${a.name} for ${art(charA)} ${charA} feel, ${b.name} for ${art(charB)} ${charB} one${tail}.`)
-  } else if (qGap) {
-    parts.push(qualityBody())
-    const loser = qWinner === a ? b : a
-    parts.push(pick(rng, [
-      `That makes ${qWinner.name} the stronger all-round pick; ${loser.name} is worth it mainly if you prefer its setting or find a better rate.`,
-      `On paper ${qWinner.name} is the safer bet; go with ${loser.name} only if its price tilts things your way.`,
-    ]))
-  } else {
-    const dA = distinguishingStrength(a, b), dB = distinguishingStrength(b, a)
-    if (dA && !dB) parts.push(`They're closely matched overall; ${a.name} edges it on ${CATEGORY[dA].noun}.`)
-    else if (dB && !dA) parts.push(`They're closely matched overall; ${b.name} edges it on ${CATEGORY[dB].noun}.`)
-    else if (dA && dB) parts.push(`They're closely matched overall, with ${a.name} leaning stronger on ${CATEGORY[dA].noun} and ${b.name} on ${CATEGORY[dB].noun}.`)
-    else parts.push(`On the big measures the two are closely matched, so the call really comes down to setting and personal preference.`)
-  }
-
-  return parts.join(' ')
+  return { intro, profileA, profileB, verdict: cap(writeVerdict(a, b, d, rng)) }
 }
 
 // `avoid` carries the template indices used for the other resort's blurb so the
@@ -583,9 +587,13 @@ function buildOverview(a, b) {
   const chooseA = writeWhoShouldChoose(a, b, rng)
   const chooseB = writeWhoShouldChoose(b, a, rng, chooseA.used)
   // deDash every field so no em/en dash reaches the page, whatever the source
-  // (our templates, lifted identity prose, or the season strings).
+  // (our templates, lifted identity prose, or the season strings). Key
+  // Differences is a small object; deDash each of its text fields.
+  const kd = writeKeyDifferences(a, b, rng)
+  const keyDifferences = {}
+  for (const k of Object.keys(kd)) keyDifferences[k] = typeof kd[k] === 'string' ? deDash(kd[k]) : kd[k]
   return {
-    keyDifferences: deDash(writeKeyDifferences(a, b, rng)),
+    keyDifferences,
     whoShouldChooseA: deDash(chooseA.text),
     whoShouldChooseB: deDash(chooseB.text),
     whenToVisit: deDash(writeWhenToVisit(a, b, rng)),
